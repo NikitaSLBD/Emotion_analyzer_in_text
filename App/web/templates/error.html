@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Ошибка - Анализатор эмоций{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h1>Произошла ошибка</h1>
+    <p>{{ error }}</p>
+    <a href="/" class="back-btn">Вернуться назад</a>
+</div>
+{% endblock %}

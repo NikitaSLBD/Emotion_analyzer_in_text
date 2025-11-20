@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Анализатор эмоций в тексте</h1>
+
+<form method="post" action="/analyze" id="analysisForm">
+    <div class="form-group">
+        <label for="text">Введите текст для анализа:</label>
+        <textarea id="text" name="text" placeholder="Введите ваш текст здесь... Каждое предложение будет проанализировано отдельно." required>{{ original_text if original_text else '' }}</textarea>
+    </div>
+    
+    <button type="submit" class="btn" id="analyzeBtn">Анализировать эмоции</button>
+</form>
+
+<div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Анализируем текст... Пожалуйста, подождите.</p>
+</div>
+{% endblock %}

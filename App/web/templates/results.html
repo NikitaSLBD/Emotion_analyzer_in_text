@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Результаты анализа - Анализатор эмоций{% endblock %}
+
+{% block content %}
+<a href="/" class="back-btn">← Назад к анализу</a>
+
+<h1>Результаты анализа эмоций</h1>
+
+<div class="results-section">
+    <h2>Анализированный текст</h2>
+    <div class="text-preview">
+        {{ original_text }}
+    </div>
+</div>
+
+<div class="results-section">
+    <h2>Общая статистика</h2>
+    <p><strong>Всего предложений:</strong> {{ total_sentences }}</p>
+    
+    <div class="overall-stats">
+        <div class="chart-container">
+            <h3>Распределение эмоций</h3>
+            <img src="{{ overall_chart }}" alt="Общее распределение эмоций" class="chart">
+        </div>
+        <div class="chart-container">
+            <h3>Частота эмоций</h3>
+            <img src="{{ frequency_chart }}" alt="Частота эмоций" class="chart">
+        </div>
+    </div>
+</div>
+
+<div class="results-section">
+    <h2>Анализ по предложениям</h2>
+    {% for result in sentence_results %}
+    <div class="sentence-result">
+        <div class="sentence-text">"{{ result.text }}"</div>
+        <div class="emotion-result">
+            Основная эмоция: 
+            <span class="emotion-badge emotion-{{ result.emotion }}">
+                {{ result.emotion }} ({{ (result.confidence * 100)|round(1) }}%)
+            </span>
+        </div>
+        <div class="chart-container">
+            <img src="{{ result.chart }}" alt="Диаграмма эмоций для предложения {{ loop.index }}" class="chart">
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
