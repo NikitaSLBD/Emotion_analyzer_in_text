@@ -7,6 +7,34 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
 <body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">EmotionAnalyzer</a>
+            <div class="nav-links">
+                {% if user %}
+                <div class="nav-user">
+                    <span class="user-info">
+                        {{ user.username }}{% if user.is_admin %} (Админ){% endif %}
+                    </span>
+                    <a href="/history" class="btn btn-small">История</a>
+                    {% if user.is_admin %}
+                    <a href="/docs" class="btn btn-small" target="_blank">API</a>
+                    {% endif %}
+                    <form action="/logout" method="post" style="display: inline;">
+                        <button type="submit" class="logout-btn">Выйти</button>
+                    </form>
+                </div>
+                {% else %}
+                <div class="nav-auth">
+                    <a href="/login" class="btn btn-small">Войти</a>
+                    <a href="/register" class="btn btn-small">Регистрация</a>
+                    <a href="/docs" class="btn btn-small" target="_blank">API</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
     <div class="container">
         {% block content %}{% endblock %}
     </div>

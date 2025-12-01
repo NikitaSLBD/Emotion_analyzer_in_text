@@ -303,3 +303,34 @@ class RuBertEmotionAnalyzer:
             "emotion_counts": emotion_counts,
             "total_sentences": len(sentence_results)
         }
+    
+    @log_function_call("preparing_for_storage")
+    def prepare_analysis_for_storage(self, original_text: str, analysis_results: List[Dict]) -> Dict:
+        """Подготавливает результаты анализа для хранения в БД"""
+        return {
+            "original_text": original_text,
+            "sentences_count": len(analysis_results),
+            "analysis_results": analysis_results,
+            "summary": self._create_analysis_summary(analysis_results)
+        }
+
+
+    @log_function_call("summary_creation")
+    def _create_analysis_summary(self, analysis_results: List[Dict]) -> Dict:
+        """Создает сводку по анализу"""
+        emotion_counts = {}
+        total_confidence = 0
+        
+        for result in analysis_results:
+            emotion = result['emotion']
+            emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
+            total_confidence += result['confidence']
+        
+        avg_confidence = total_confidence / len(analysis_results) if analysis_results else 0
+        
+        return {
+            "emotion_counts": emotion_counts,
+            "dominant_emotion": max(emotion_counts, key=emotion_counts.get) if emotion_counts else "неизвестно",
+            "average_confidence": avg_confidence,
+            "total_sentences": len(analysis_results)
+        }

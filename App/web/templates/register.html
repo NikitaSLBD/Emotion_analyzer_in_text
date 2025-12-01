@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация - Анализатор эмоций{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h1>Регистрация</h1>
+    
+    <form method="post" action="/register" class="auth-form" id="registerForm">
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required class="form-input" 
+                   placeholder="example@mail.com">
+            <small class="form-help">Введите действительный email адрес</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" required class="form-input" 
+                   placeholder="ivan_ivanov" minlength="3" maxlength="50"
+                   pattern="[a-zA-Z0-9_-]+" title="Только буквы, цифры, дефисы и подчеркивания">
+            <small class="form-help">Только английские буквы, цифры, дефисы и подчеркивания (мин. 3 символа)</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required class="form-input" 
+                   placeholder="Не менее 6 символов" minlength="6">
+            <small class="form-help">Пароль должен содержать минимум 6 символов</small>
+        </div>
+        
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="is_admin" value="true" id="is_admin">
+                <span>Зарегистрироваться как администратор</span>
+            </label>
+            <small class="form-help">Администраторы имеют доступ к дополнительным функциям</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+    </form>
+    
+    <div class="auth-links">
+        <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+    </div>
+</div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    // Проверка имени пользователя
+    const usernameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!usernameRegex.test(username)) {
+        alert('Имя пользователя может содержать только английские буквы, цифры, дефисы и подчеркивания');
+        e.preventDefault();
+        return;
+    }
+    
+    // Проверка длины пароля
+    if (password.length < 6) {
+        alert('Пароль должен содержать минимум 6 символов');
+        e.preventDefault();
+        return;
+    }
+});
+</script>
+{% endblock %}

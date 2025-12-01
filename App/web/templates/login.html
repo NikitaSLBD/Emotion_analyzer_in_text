@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Вход - Анализатор эмоций{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <h1>Вход в систему</h1>
+    
+    <form method="post" action="/login" class="auth-form">
+        <div class="form-group">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" required class="form-input" 
+                   placeholder="Введите ваше имя пользователя">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required class="form-input" 
+                   placeholder="Введите ваш пароль">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Войти</button>
+    </form>
+    
+    <div class="auth-links">
+        <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+        <p class="api-info">
+            <small>Также доступно через <a href="/docs">API</a> (OAuth2)</small>
+        </p>
+    </div>
+</div>
+{% endblock %}

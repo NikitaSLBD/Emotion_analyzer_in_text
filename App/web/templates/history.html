@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}История анализов - Анализатор эмоций{% endblock %}
+
+{% block content %}
+<div class="history-header">
+    <a href="/" class="back-btn">← Назад к анализу</a>
+    <h1>История анализов</h1>
+</div>
+
+{% if analyses %}
+<div class="analyses-list">
+    {% for analysis in analyses %}
+    <div class="analysis-item">
+        <div class="analysis-header">
+            <span class="analysis-date">{{ analysis.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+            <span class="analysis-sentences">{{ analysis.analysis_results.summary.total_sentences }} предложений</span>
+        </div>
+        
+        <div class="analysis-preview">
+            <strong>Текст:</strong> {{ analysis.original_text[:100] }}{% if analysis.original_text|length > 100 %}...{% endif %}
+        </div>
+        
+        <div class="analysis-summary">
+            <strong>Основная эмоция:</strong>
+            <span class="emotion-badge emotion-{{ analysis.analysis_results.summary.dominant_emotion }}">
+                {{ analysis.analysis_results.summary.dominant_emotion }}
+            </span>
+            <strong>Уверенность:</strong> {{ (analysis.analysis_results.summary.average_confidence * 100)|round(1) }}%
+        </div>
+        
+        <div class="analysis-actions">
+            <a href="/analysis/{{ analysis.id }}" class="btn btn-small">Просмотреть детали</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="pagination">
+    <p>Всего анализов: {{ total }}</p>
+</div>
+{% else %}
+<div class="empty-state">
+    <h2>История анализов пуста</h2>
+    <p>Вы еще не анализировали тексты. <a href="/">Начните первый анализ</a></p>
+</div>
+{% endif %}
+{% endblock %}

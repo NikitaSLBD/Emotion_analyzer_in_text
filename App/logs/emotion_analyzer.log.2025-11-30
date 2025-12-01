@@ -1,0 +1,41 @@
+2025-11-30 21:28:43 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:32:11 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:33:17 - emotion_analyzer.init_db - INFO - [init_db:main:20] - Starting database initialization...
+2025-11-30 21:33:17 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:33:17 - emotion_analyzer.init_db - ERROR - [init_db:main:30] - Database initialization failed: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:42:23 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:45:45 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 21:53:07 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
+2025-11-30 23:29:49 - emotion_analyzer.database - INFO - [database:init_db:24] - Database tables created successfully
+2025-11-30 23:29:49 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:86] - Загрузка RuBERT-base-cased модели из директории: D:\Programming\python\emotionalyzer\App\model
+2025-11-30 23:29:49 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:102] - Найдено файлов токенизатора: 3
+2025-11-30 23:29:49 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:106] - Загрузка токенизатора из локальных файлов
+2025-11-30 23:29:50 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:113] - Загрузка весов модели из D:\Programming\python\emotionalyzer\App\model\rubert_emotion_classifier.pt
+2025-11-30 23:29:55 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:30] - Инициализирована модель RuBERT-base-cased с 6 классами
+2025-11-30 23:29:55 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:31] - Hidden size: 768, Layers: 12
+2025-11-30 23:29:55 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:32] - Vocab size: 119547
+2025-11-30 23:29:56 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:124] - RuBERT-base-cased модель и токенизатор успешно загружены
+2025-11-30 23:29:56 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:125] - Размер словаря: 119547
+2025-11-30 23:29:56 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:126] - Архитектура: 12 слоев, hidden_size=768
+2025-11-30 23:42:55 - emotion_analyzer.database - INFO - [database:init_db:24] - Database tables created successfully
+2025-11-30 23:42:55 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:86] - Загрузка RuBERT-base-cased модели из директории: D:\Programming\python\emotionalyzer\App\model
+2025-11-30 23:42:55 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:102] - Найдено файлов токенизатора: 3
+2025-11-30 23:42:55 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:106] - Загрузка токенизатора из локальных файлов
+2025-11-30 23:42:55 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:113] - Загрузка весов модели из D:\Programming\python\emotionalyzer\App\model\rubert_emotion_classifier.pt
+2025-11-30 23:42:59 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:30] - Инициализирована модель RuBERT-base-cased с 6 классами
+2025-11-30 23:42:59 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:31] - Hidden size: 768, Layers: 12
+2025-11-30 23:42:59 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:32] - Vocab size: 119547
+2025-11-30 23:43:00 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:124] - RuBERT-base-cased модель и токенизатор успешно загружены
+2025-11-30 23:43:00 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:125] - Размер словаря: 119547
+2025-11-30 23:43:00 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:126] - Архитектура: 12 слоев, hidden_size=768
+2025-11-30 23:58:22 - emotion_analyzer.database - INFO - [database:init_db:24] - Database tables created successfully
+2025-11-30 23:58:22 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:86] - Загрузка RuBERT-base-cased модели из директории: D:\Programming\python\emotionalyzer\App\model
+2025-11-30 23:58:22 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:102] - Найдено файлов токенизатора: 3
+2025-11-30 23:58:22 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:106] - Загрузка токенизатора из локальных файлов
+2025-11-30 23:58:22 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:113] - Загрузка весов модели из D:\Programming\python\emotionalyzer\App\model\rubert_emotion_classifier.pt
+2025-11-30 23:58:25 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:30] - Инициализирована модель RuBERT-base-cased с 6 классами
+2025-11-30 23:58:25 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:31] - Hidden size: 768, Layers: 12
+2025-11-30 23:58:25 - emotion_analyzer.rubert_base_model - INFO - [emotion_classifier:__init__:32] - Vocab size: 119547
+2025-11-30 23:58:26 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:124] - RuBERT-base-cased модель и токенизатор успешно загружены
+2025-11-30 23:58:26 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:125] - Размер словаря: 119547
+2025-11-30 23:58:26 - emotion_analyzer.rubert_base_analyzer - INFO - [emotion_classifier:load_model:126] - Архитектура: 12 слоев, hidden_size=768
