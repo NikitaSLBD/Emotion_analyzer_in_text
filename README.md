@@ -10,7 +10,9 @@
 ```
 pip install -r requirements.txt
 ```
-После установки нужно открыть соединение в PostgreSQL с следующими параметрами:
+Затем загрузите модель по этой ссылке на гугл диск: https://drive.google.com/drive/folders/1iz3Zu0LdBL76veXbYEZncgaPTB3alUVr?usp=sharing и переместите ее в папку model.
+
+После установки  нужно открыть соединение в PostgreSQL с следующими параметрами:
 
 - пользователь: emotion_user;
 - пароль: password123;
