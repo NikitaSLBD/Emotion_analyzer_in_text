@@ -1,7 +1,0 @@
-2025-11-30 21:28:43 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:32:11 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:33:17 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:33:17 - emotion_analyzer.init_db - ERROR - [init_db:main:30] - Database initialization failed: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:42:23 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:45:45 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte
-2025-11-30 21:53:07 - emotion_analyzer.database - ERROR - [database:init_db:26] - Error creating database tables: 'utf-8' codec can't decode byte 0xc2 in position 61: invalid continuation byte

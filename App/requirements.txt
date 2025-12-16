@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+torch
+transformers
+matplotlib
+python-multipart
+colorama
+protobuf
+hf_xet
+sqlalchemy
+psycopg2-binary
+alembic
+python-jose
+passlib
+bcrypt==4.3.0
+pydantic-settings
+pydantic[email]

@@ -83,7 +83,7 @@ async def register_web(
 ):
     """Регистрация пользователя (веб-форма)"""
     try:
-        # Преобразуем is_admin из строки в boolean
+        
         is_admin_bool = is_admin.lower() == "true"
         
         # Создаем объект UserCreate
@@ -151,7 +151,7 @@ async def home(
     current_user: User = Depends(get_current_user_optional)
 ):
     """Главная страница с формой ввода"""
-    return templates.TemplateResponse("index.html", {
+    return templates.TemplateResponse("register.html", {
         "request": request, 
         "user": current_user
     })
@@ -187,7 +187,7 @@ async def login_web(
         response = RedirectResponse(url="/", status_code=303)
         response.set_cookie(
             key="access_token", 
-            value=token_data.access_token, 
+            value=token_data['access_token'], 
             httponly=True,
             max_age=1800  # 30 минут
         )
@@ -240,6 +240,7 @@ async def analyze_text(
             "user": current_user
         })
     
+    text = text_preprocessor.clean_text(text)
     # Разделяем текст на предложения
     sentences = text_preprocessor.split_into_sentences(text)
     

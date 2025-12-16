@@ -37,6 +37,6 @@ class TextPreprocessor:
     
     def clean_text(self, text: str) -> str:
         """Очистка текста от лишних пробелов и символов"""
+        text = re.sub(r'[^\w\s.!?,;:]', ' ', text)  # Удаление специальных символов
         text = re.sub(r'\s+', ' ', text)  # Удаление множественных пробелов
-        text = re.sub(r'[^\w\s.!?,;:]', '', text)  # Удаление специальных символов
         return text.strip()

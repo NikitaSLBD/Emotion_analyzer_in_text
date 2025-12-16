@@ -14,7 +14,7 @@
                 {% if user %}
                 <div class="nav-user">
                     <span class="user-info">
-                        {{ user.username }}{% if user.is_admin %} (Админ){% endif %}
+                        {{ user.username }}{% if user.is_admin %} (Социолог-эксперт){% endif %}
                     </span>
                     <a href="/history" class="btn btn-small">История</a>
                     {% if user.is_admin %}
@@ -28,7 +28,6 @@
                 <div class="nav-auth">
                     <a href="/login" class="btn btn-small">Войти</a>
                     <a href="/register" class="btn btn-small">Регистрация</a>
-                    <a href="/docs" class="btn btn-small" target="_blank">API</a>
                 </div>
                 {% endif %}
             </div>

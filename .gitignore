@@ -1,4 +1,4 @@
 rubert_emotion_classifier.pt
 requests.txt    
 __pycache__/
-alembic.ini
+logs/

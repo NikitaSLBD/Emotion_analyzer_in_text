@@ -188,12 +188,6 @@ textarea:focus {
     padding: 40px 0;
 }
 
-.error-icon {
-    font-size: 48px;
-    color: #e74c3c;
-    margin-bottom: 20px;
-}
-
 @media (max-width: 768px) {
     body {
         padding: 10px;
