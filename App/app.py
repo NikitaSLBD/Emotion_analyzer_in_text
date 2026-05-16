@@ -1,26 +1,30 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, Depends, HTTPException, status
+from fastapi import FastAPI, Request, Form, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+import tempfile
+import os
 
 from modules.emotion_classifier import RuBertEmotionAnalyzer
-from modules.text_preprocessor import TextPreprocessor
+from modules.text_preprocessing import TextPreprocessor
 from modules.logger import get_logger
 from modules.database import get_db, init_db
 from modules.user import User, TextAnalysis
 from modules.auth import (
-    get_password_hash, 
-    authenticate_user, 
-    create_access_token, 
+    get_password_hash,
+    authenticate_user,
+    create_access_token,
     get_current_user,
     get_current_admin_user
 )
 from modules.user_control import get_current_user_optional, get_current_user_required
 from modules.data import UserCreate, Token, UserResponse
+from modules.social_media import CollectorFactory
+from Emotion_analyzer_in_text.App.infrastructure.config import settings
 from pathlib import Path
 
 logger = get_logger("web")
@@ -83,7 +87,7 @@ async def register_web(
 ):
     """Регистрация пользователя (веб-форма)"""
     try:
-        
+        # Преобразуем is_admin из строки в boolean
         is_admin_bool = is_admin.lower() == "true"
         
         # Создаем объект UserCreate
@@ -151,7 +155,7 @@ async def home(
     current_user: User = Depends(get_current_user_optional)
 ):
     """Главная страница с формой ввода"""
-    return templates.TemplateResponse("register.html", {
+    return templates.TemplateResponse("index.html", {
         "request": request, 
         "user": current_user
     })
@@ -175,7 +179,6 @@ async def login_web(
 ):
     """Аутентификация пользователя (веб-форма)"""
     try:
-        # Используем OAuth2 endpoint для аутентификации
         form_data = OAuth2PasswordRequestForm(
             username=username,
             password=password
@@ -228,59 +231,289 @@ async def history_page(
 @app.post("/analyze")
 async def analyze_text(
     request: Request,
-    text: str = Form(...),
+    text: Optional[str] = Form(None),
+    source_type: Optional[str] = Form(None),
+    source_url: Optional[str] = Form(None),
+    max_comments: Optional[int] = Form(50),
+    auto_correct: bool = Form(False),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required)
+    current_user: User = Depends(get_current_user_optional)
 ):
-    """Анализ текста и сохранение результатов"""
+    """Анализ текста из формы или комментариев из социальных сетей"""
     if not emotion_analyzer.is_loaded():
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error": "Модель не загружена",
             "user": current_user
         })
-    
-    text = text_preprocessor.clean_text(text)
-    # Разделяем текст на предложения
-    sentences = text_preprocessor.split_into_sentences(text)
-    
-    if not sentences:
+
+    # Определяем источник текста
+    input_text = None
+    source_info = None
+    comments_data = None
+
+    if source_type and source_url:
+        # Обработка комментариев из социальных сетей
+        try:
+            # Получаем учетные данные из переменных окружения
+            credentials = {}
+            if source_type == 'youtube':
+                api_key = settings.YOUTUBE_API_KEY
+                if not api_key:
+                    return templates.TemplateResponse("error.html", {
+                        "request": request,
+                        "error": "YouTube API ключ не настроен. Обратитесь к администратору.",
+                        "user": current_user
+                    })
+                credentials['api_key'] = api_key
+            elif source_type == 'telegram':
+                api_id = settings.TELEGRAM_API_ID
+                api_hash = settings.TELEGRAM_API_HASH
+                if not api_id or not api_hash:
+                    return templates.TemplateResponse("error.html", {
+                        "request": request,
+                        "error": "Telegram API данные не настроены. Обратитесь к администратору.",
+                        "user": current_user
+                    })
+                credentials['api_id'] = int(api_id)
+                credentials['api_hash'] = api_hash
+
+            # Создаем коллектор
+            collector = CollectorFactory.create_collector(source_type, credentials)
+
+            # Собираем комментарии
+            logger.info(f"Сбор комментариев из {source_type}: {source_url}")
+            comments = collector.collect_comments(
+                source_url,
+                max_comments=max_comments,
+                include_replies=False
+            )
+
+            if not comments:
+                return templates.TemplateResponse("error.html", {
+                    "request": request,
+                    "error": "Не удалось получить комментарии. Проверьте URL и доступность источника.",
+                    "user": current_user
+                })
+
+            # Объединяем комментарии в текст
+            input_text = collector.format_comments_as_text(comments)
+
+            # Сохраняем информацию об источнике
+            source_info = {
+                'type': source_type,
+                'url': source_url,
+                'comments_count': len(comments)
+            }
+
+            # Сохраняем статистику комментариев
+            comments_data = collector.get_statistics(comments)
+
+            logger.info(f"Собрано {len(comments)} комментариев из {source_type}")
+
+        except ValueError as e:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Ошибка обработки URL: {str(e)}",
+                "user": current_user
+            })
+        except ConnectionError as e:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Ошибка подключения к {source_type}: {str(e)}",
+                "user": current_user
+            })
+        except ImportError as e:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Отсутствует необходимая библиотека: {str(e)}",
+                "user": current_user
+            })
+        except Exception as e:
+            logger.error(f"Social media collection error: {str(e)}")
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Не удалось собрать комментарии: {str(e)}",
+                "user": current_user
+            })
+
+    elif text:
+        # Обработка текста из формы
+        input_text = text
+        source_info = {'type': 'text'}
+    else:
         return templates.TemplateResponse("error.html", {
             "request": request,
-            "error": "Не удалось выделить предложения из текста",
+            "error": "Необходимо ввести текст или указать источник комментариев",
             "user": current_user
         })
-    
-    # Анализируем каждое предложение
-    analysis_results = emotion_analyzer.analyze_sentences(sentences)
-    
+
+    # Определяем, есть ли комментарии в тексте
+    has_comments = '\n' + '_' * 20 + '\n' in input_text
+
+    if has_comments:
+        # Иерархический анализ с комментариями
+        logger.info("Detected comment structure, using hierarchical analysis")
+        validation_result = text_preprocessor.validate_and_correct_text_with_comments(
+            input_text,
+            auto_correct=auto_correct,
+            use_speller=True,
+            skip_invalid=True
+        )
+
+        if not validation_result['valid']:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": f"Текст не прошел валидацию: не найдено ни одного валидного предложения",
+                "user": current_user
+            })
+
+        # Иерархический анализ эмоций
+        analysis_result = emotion_analyzer.analyze_with_comments(validation_result['comments'])
+
+        if not analysis_result['total_analyzed_sentences']:
+            return templates.TemplateResponse("error.html", {
+                "request": request,
+                "error": "Не удалось проанализировать текст",
+                "user": current_user
+            })
+
+        # Сохраняем анализ в БД только для авторизованных пользователей
+        if current_user:
+            analysis_data = {
+                "original_text": input_text,
+                "analysis_type": "hierarchical",
+                "comments_count": validation_result['comments_count'],
+                "total_sentences_count": validation_result['total_sentences_count'],
+                "total_valid_sentences_count": validation_result['total_valid_sentences_count'],
+                "total_skipped_sentences_count": validation_result['total_skipped_sentences_count'],
+                "comments": analysis_result['comments'],
+                "overall_summary": analysis_result['overall_summary'],
+                "validation": {
+                    "has_corrections": validation_result.get('has_corrections', False),
+                    "original_text": input_text
+                },
+                "source": source_info
+            }
+
+            if comments_data:
+                analysis_data['comments_statistics'] = comments_data
+
+            db_analysis = TextAnalysis(
+                user_id=current_user.id,
+                original_text=input_text,
+                analysis_results=analysis_data
+            )
+
+            db.add(db_analysis)
+            db.commit()
+            logger.info(f"Hierarchical analysis saved to database for user {current_user.username}")
+        else:
+            logger.info("Hierarchical analysis performed for anonymous user, not saved to database")
+
+        return templates.TemplateResponse("results_hierarchical.html", {
+            "request": request,
+            "user": current_user,
+            "original_text": input_text,
+            "source_info": source_info,
+            "comments_data": comments_data,
+            "validation_result": validation_result,
+            "analysis_result": analysis_result,
+            **analysis_result['overall_visualization']
+        })
+
+    else:
+        # Обычный анализ без комментариев
+        logger.info("No comment structure detected, using standard analysis")
+        validation_result = text_preprocessor.validate_and_correct_text(
+            input_text,
+            auto_correct=auto_correct,
+            use_speller=True,
+            skip_invalid=True  # Пропускаем невалидные предложения
+        )
+
+    if not validation_result['valid']:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": f"Текст не прошел валидацию: не найдено ни одного валидного предложения",
+            "user": current_user,
+            "issues": validation_result.get('issues', []),
+            "skipped_sentences": validation_result.get('skipped_sentences', [])
+        })
+
+    # Используем только валидные предложения для анализа
+    valid_sentences = validation_result.get('valid_sentences', [])
+    skipped_sentences = validation_result.get('skipped_sentences', [])
+
+    if not valid_sentences:
+        return templates.TemplateResponse("error.html", {
+            "request": request,
+            "error": "Не найдено валидных предложений для анализа",
+            "user": current_user,
+            "skipped_sentences": skipped_sentences
+        })
+
+    # Анализируем только валидные предложения
+    analysis_results = emotion_analyzer.analyze_sentences(valid_sentences)
+
     if not analysis_results:
         return templates.TemplateResponse("error.html", {
             "request": request,
             "error": "Не удалось проанализировать текст",
             "user": current_user
         })
-    
+
     # Создаем визуализации
     visualization_data = emotion_analyzer.create_visualizations(analysis_results)
-    
-    # Сохраняем анализ в БД
-    analysis_data = emotion_analyzer.prepare_analysis_for_storage(text, analysis_results)
-    
-    db_analysis = TextAnalysis(
-        user_id=current_user.id,
-        original_text=text,
-        analysis_results=analysis_data
-    )
-    
-    db.add(db_analysis)
-    db.commit()
-    
+
+    # Сохраняем анализ в БД только для авторизованных пользователей
+    if current_user:
+        analysis_data = emotion_analyzer.prepare_analysis_for_storage(
+            validation_result['corrected_text'],
+            analysis_results
+        )
+
+        # Добавляем информацию о валидации и исправлениях
+        analysis_data['validation'] = {
+            'was_corrected': validation_result['has_corrections'],
+            'original_text': input_text,
+            'corrections': validation_result.get('spell_corrections', []),
+            'issues': validation_result.get('issues', []),
+            'valid_sentences_count': validation_result.get('valid_sentences_count', 0),
+            'skipped_sentences_count': validation_result.get('skipped_sentences_count', 0),
+            'skipped_sentences': skipped_sentences
+        }
+
+        # Добавляем информацию об источнике
+        analysis_data['source'] = source_info
+        if comments_data:
+            analysis_data['comments_statistics'] = comments_data
+
+        db_analysis = TextAnalysis(
+            user_id=current_user.id,
+            original_text=input_text,
+            analysis_results=analysis_data
+        )
+
+        db.add(db_analysis)
+        db.commit()
+        logger.info(f"Analysis saved to database for user {current_user.username}")
+    else:
+        logger.info("Analysis performed for anonymous user, not saved to database")
+
     return templates.TemplateResponse("results.html", {
         "request": request,
         "user": current_user,
-        "original_text": text,
+        "original_text": input_text,
+        "processed_text": validation_result['corrected_text'],
+        "was_corrected": validation_result['has_corrections'],
+        "corrections": validation_result.get('spell_corrections', []),
         "sentence_results": analysis_results,
+        "source_info": source_info,
+        "comments_data": comments_data,
+        "skipped_sentences": skipped_sentences,
+        "valid_sentences_count": len(valid_sentences),
+        "total_sentences_count": validation_result.get('sentences_count', 0),
         **visualization_data
     })
 

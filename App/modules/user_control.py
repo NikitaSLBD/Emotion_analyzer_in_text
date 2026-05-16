@@ -1,7 +1,7 @@
 from fastapi import Request, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from modules.database import get_db
-from modules.auth import get_current_user, oauth2_scheme
+from modules.auth import get_current_user
 from modules.user import User
 from modules.logger import get_logger
 from typing import Optional

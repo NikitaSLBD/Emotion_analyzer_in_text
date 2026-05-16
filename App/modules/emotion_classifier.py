@@ -22,7 +22,7 @@ class RuBertEmotionClassifier(nn.Module):
             self.config = AutoConfig.from_pretrained(model_name, num_labels=num_labels)
             self.bert = AutoModel.from_pretrained(model_name, config=self.config)
             
-
+            
             # Классификатор поверх BERT
             self.dropout = nn.Dropout(self.config.hidden_dropout_prob)
             self.classifier = nn.Linear(self.config.hidden_size, num_labels)
@@ -320,17 +320,117 @@ class RuBertEmotionAnalyzer:
         """Создает сводку по анализу"""
         emotion_counts = {}
         total_confidence = 0
-        
+
         for result in analysis_results:
             emotion = result['emotion']
             emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
             total_confidence += result['confidence']
-        
+
         avg_confidence = total_confidence / len(analysis_results) if analysis_results else 0
-        
+
         return {
             "emotion_counts": emotion_counts,
             "dominant_emotion": max(emotion_counts, key=emotion_counts.get) if emotion_counts else "неизвестно",
             "average_confidence": avg_confidence,
             "total_sentences": len(analysis_results)
         }
+
+    @log_function_call("hierarchical_analysis")
+    def analyze_with_comments(self, comments_data: List[Dict]) -> Dict:
+        """
+        Иерархический анализ: комментарии -> предложения
+
+        Args:
+            comments_data: Список словарей с данными комментариев из preprocessor
+
+        Returns:
+            Словарь с иерархической структурой анализа
+        """
+        self.logger.info(f"Starting hierarchical analysis for {len(comments_data)} comments")
+
+        analyzed_comments = []
+        all_sentence_results = []
+
+        for comment_data in comments_data:
+            comment_index = comment_data['comment_index']
+            valid_sentences = comment_data['valid_sentences']
+
+            if not valid_sentences:
+                self.logger.warning(f"Comment {comment_index} has no valid sentences, skipping")
+                analyzed_comments.append({
+                    "comment_index": comment_index,
+                    "original_text": comment_data['original_text'],
+                    "sentence_results": [],
+                    "comment_summary": None,
+                    "skipped_sentences": comment_data.get('skipped_sentences', [])
+                })
+                continue
+
+            # Анализируем предложения комментария
+            self.logger.info(f"Analyzing comment {comment_index + 1} with {len(valid_sentences)} sentences")
+            sentence_results = self.analyze_sentences(valid_sentences)
+
+            # Создаем визуализации для каждого предложения
+            for i, result in enumerate(sentence_results):
+                result['chart'] = self.create_emotion_chart(
+                    result['all_probabilities'],
+                    f"Комментарий {comment_index + 1}, Предложение {i + 1}"
+                )
+                result['sentence_index_in_comment'] = i
+
+            # Создаем сводку по комментарию
+            comment_summary = self._create_analysis_summary(sentence_results)
+
+            # Создаем общую диаграмму для комментария
+            if sentence_results:
+                overall_probs = {}
+                for result in sentence_results:
+                    for emotion, prob in result['all_probabilities'].items():
+                        if emotion not in overall_probs:
+                            overall_probs[emotion] = 0
+                        overall_probs[emotion] += prob
+
+                # Усредняем вероятности
+                for emotion in overall_probs:
+                    overall_probs[emotion] /= len(sentence_results)
+
+                comment_chart = self.create_emotion_chart(
+                    overall_probs,
+                    f"Комментарий {comment_index + 1}: Общее распределение"
+                )
+            else:
+                comment_chart = None
+
+            analyzed_comments.append({
+                "comment_index": comment_index,
+                "original_text": comment_data['original_text'],
+                "sentence_results": sentence_results,
+                "comment_summary": comment_summary,
+                "comment_chart": comment_chart,
+                "skipped_sentences": comment_data.get('skipped_sentences', []),
+                "valid_sentences_count": len(sentence_results),
+                "skipped_sentences_count": comment_data.get('skipped_sentences_count', 0)
+            })
+
+            all_sentence_results.extend(sentence_results)
+
+        # Создаем общую статистику по всем комментариям
+        if all_sentence_results:
+            overall_visualization = self.create_visualizations(all_sentence_results)
+            overall_summary = self._create_analysis_summary(all_sentence_results)
+        else:
+            overall_visualization = {}
+            overall_summary = {}
+
+        result = {
+            "comments": analyzed_comments,
+            "overall_summary": overall_summary,
+            "overall_visualization": overall_visualization,
+            "total_comments": len(comments_data),
+            "total_analyzed_sentences": len(all_sentence_results)
+        }
+
+        self.logger.info(f"Hierarchical analysis completed: {len(analyzed_comments)} comments, "
+                        f"{len(all_sentence_results)} sentences analyzed")
+
+        return result

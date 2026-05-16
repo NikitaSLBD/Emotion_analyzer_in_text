@@ -13,5 +13,8 @@ alembic
 python-jose
 passlib
 bcrypt==4.3.0
+pymorphy3
+pymorphy3-dicts-ru
+pyaspeller
 pydantic-settings
 pydantic[email]

@@ -3,12 +3,44 @@
 {% block content %}
 <h1>Анализатор эмоций в тексте</h1>
 
-<form method="post" action="/analyze" id="analysisForm">
-    <div class="form-group">
+<div class="input-mode-selector">
+    <button type="button" class="mode-btn active" id="textModeBtn" onclick="switchMode('text')">
+        Ввести текст
+    </button>
+    <button type="button" class="mode-btn" id="socialModeBtn" onclick="switchMode('social')">
+        Социальные сети
+    </button>
+</div>
+
+<form method="post" action="/analyze" id="analysisForm" enctype="multipart/form-data">
+    <div class="form-group" id="textInputGroup">
         <label for="text">Введите текст для анализа:</label>
-        <textarea id="text" name="text" placeholder="Введите ваш текст здесь... Каждое предложение будет проанализировано отдельно." required>{{ original_text if original_text else '' }}</textarea>
+        <textarea id="text" name="text" placeholder="Введите ваш текст здесь... Каждое предложение будет проанализировано отдельно.">{{ original_text if original_text else '' }}</textarea>
     </div>
-    
+
+    <div class="form-group" id="socialInputGroup" style="display: none;">
+        <label for="source_type">Выберите источник:</label>
+        <select id="source_type" name="source_type" class="form-input">
+            <option value="youtube">YouTube</option>
+            <option value="telegram">Telegram</option>
+        </select>
+
+        <label for="source_url" style="margin-top: 15px;">URL видео/канала:</label>
+        <input type="text" id="source_url" name="source_url" class="form-input"
+               placeholder="https://youtube.com/watch?v=... или https://t.me/channel">
+
+        <label for="max_comments" style="margin-top: 15px;">Количество комментариев:</label>
+        <input type="number" id="max_comments" name="max_comments" class="form-input"
+               value="50" min="1" max="500">
+
+        <div class="api-info">
+            <p id="apiKeyInfo">
+                <strong>YouTube:</strong> Требуется API ключ.
+                <a href="https://console.cloud.google.com/" target="_blank">Получить ключ</a>
+            </p>
+        </div>
+    </div>
+
     <button type="submit" class="btn" id="analyzeBtn">Анализировать эмоции</button>
 </form>
 
@@ -16,4 +48,49 @@
     <div class="spinner"></div>
     <p>Анализируем текст... Пожалуйста, подождите.</p>
 </div>
+
+<script>
+function switchMode(mode) {
+    const textGroup = document.getElementById('textInputGroup');
+    const socialGroup = document.getElementById('socialInputGroup');
+    const textModeBtn = document.getElementById('textModeBtn');
+    const socialModeBtn = document.getElementById('socialModeBtn');
+    const textInput = document.getElementById('text');
+    const sourceUrl = document.getElementById('source_url');
+
+    if (mode === 'text') {
+        textGroup.style.display = 'block';
+        socialGroup.style.display = 'none';
+        textModeBtn.classList.add('active');
+        socialModeBtn.classList.remove('active');
+        textInput.required = true;
+        sourceUrl.required = false;
+    } else {
+        textGroup.style.display = 'none';
+        socialGroup.style.display = 'block';
+        textModeBtn.classList.remove('active');
+        socialModeBtn.classList.add('active');
+        textInput.required = false;
+        sourceUrl.required = true;
+    }
+}
+
+document.getElementById('source_type').addEventListener('change', function(e) {
+    const apiInfo = document.getElementById('apiKeyInfo');
+    const sourceUrl = document.getElementById('source_url');
+
+    if (e.target.value === 'youtube') {
+        apiInfo.innerHTML = '<strong>YouTube:</strong> Требуется API ключ. <a href="https://console.cloud.google.com/" target="_blank">Получить ключ</a>';
+        sourceUrl.placeholder = 'https://youtube.com/watch?v=...';
+    } else if (e.target.value === 'telegram') {
+        apiInfo.innerHTML = '<strong>Telegram:</strong> Требуется API ID и Hash. <a href="https://my.telegram.org/apps" target="_blank">Получить данные</a>';
+        sourceUrl.placeholder = 'https://t.me/channel_name';
+    }
+});
+
+document.getElementById('analysisForm').addEventListener('submit', function() {
+    document.getElementById('loading').style.display = 'flex';
+    document.getElementById('analyzeBtn').disabled = true;
+});
+</script>
 {% endblock %}

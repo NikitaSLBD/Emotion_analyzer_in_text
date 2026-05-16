@@ -1,3 +1,5 @@
-rubert_emotion_classifier.pt
+*.pt
 requests.txt    
 __pycache__/
+.env
+logs

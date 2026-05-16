@@ -9,6 +9,20 @@
 
 <div class="results-section">
     <h2>Анализированный текст</h2>
+    {% if source_info and source_info.type in ['youtube', 'telegram'] %}
+    <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
+        <p style="margin: 5px 0;"><strong>Источник:</strong>
+            {% if source_info.type == 'youtube' %}YouTube{% elif source_info.type == 'telegram' %}Telegram{% endif %}
+        </p>
+        <p style="margin: 5px 0;"><strong>URL:</strong> <a href="{{ source_info.url }}" target="_blank">{{ source_info.url }}</a></p>
+        {% if comments_data %}
+        <p style="margin: 5px 0;"><strong>Собрано комментариев:</strong> {{ comments_data.total_comments }}</p>
+        <p style="margin: 5px 0;"><strong>Уникальных авторов:</strong> {{ comments_data.authors }}</p>
+        <p style="margin: 5px 0;"><strong>Всего лайков:</strong> {{ comments_data.total_likes }}</p>
+        <p style="margin: 5px 0;"><strong>Средняя длина комментария:</strong> {{ comments_data.average_comment_length }} символов</p>
+        {% endif %}
+    </div>
+    {% endif %}
     <div class="text-preview">
         {{ original_text }}
     </div>
@@ -16,8 +30,12 @@
 
 <div class="results-section">
     <h2>Общая статистика</h2>
-    <p><strong>Всего предложений:</strong> {{ total_sentences }}</p>
-    
+    <p><strong>Всего предложений:</strong> {{ total_sentences_count }}</p>
+    <p><strong>Проанализировано:</strong> {{ valid_sentences_count }}</p>
+    {% if skipped_sentences and skipped_sentences|length > 0 %}
+    <p><strong>Пропущено:</strong> {{ skipped_sentences|length }}</p>
+    {% endif %}
+
     <div class="overall-stats">
         <div class="chart-container">
             <h3>Распределение эмоций</h3>
@@ -29,6 +47,25 @@
         </div>
     </div>
 </div>
+
+{% if skipped_sentences and skipped_sentences|length > 0 %}
+<div class="results-section">
+    <h2>⚠️ Пропущенные предложения</h2>
+    <p style="color: #666; margin-bottom: 15px;">
+        Следующие предложения были пропущены при анализе из-за несоответствия критериям валидации:
+    </p>
+    {% for skipped in skipped_sentences %}
+    <div class="skipped-sentence" style="background: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; margin-bottom: 10px; border-radius: 4px;">
+        <div style="margin-bottom: 5px;">
+            <strong>Предложение {{ skipped.sentence_index + 1 }}:</strong> "{{ skipped.sentence }}"
+        </div>
+        <div style="color: #856404; font-size: 0.9em;">
+            <strong>Причина:</strong> {{ skipped.reason }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 
 <div class="results-section">
     <h2>Анализ по предложениям</h2>

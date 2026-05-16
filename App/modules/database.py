@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from modules.config import settings
+from Emotion_analyzer_in_text.App.infrastructure.config import settings
 from modules.logger import get_logger
 
 logger = get_logger("database")
@@ -21,7 +21,7 @@ def get_db():
 def init_db():
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created successfully")
+        logger.info("БД создана успешно")
     except Exception as e:
-        logger.error(f"Error creating database tables: {str(e)}")
+        logger.error(f"Ошибка при создании БД: {str(e)}")
         raise
