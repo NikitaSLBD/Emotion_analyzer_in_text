@@ -40,9 +40,10 @@ class YouTubeCollector(BaseCollector):
             - https://www.youtube.com/watch?v=VIDEO_ID
             - https://youtu.be/VIDEO_ID
             - https://www.youtube.com/embed/VIDEO_ID
+            - https://www.youtube.com/shorts/VIDEO_ID
         """
         patterns = [
-            r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})',
+            r'(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})',
             r'youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})',
         ]
 

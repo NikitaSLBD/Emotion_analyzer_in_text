@@ -5,10 +5,11 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from modules.config import settings
 from modules.database import get_db
 from modules.user import User
 from modules.logger import get_logger
+
+from App.infrastructure.config import settings
 
 logger = get_logger("auth")
 

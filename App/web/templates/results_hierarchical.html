@@ -9,16 +9,16 @@
 
 <div class="results-section">
     <h2>Информация об источнике</h2>
-    {% if source_info and source_info.type in ['youtube', 'telegram'] %}
+    {% if source_info and source_info['type'] in ['youtube', 'telegram'] %}
     <div style="background: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
         <p style="margin: 5px 0;"><strong>Источник:</strong>
-            {% if source_info.type == 'youtube' %}YouTube{% elif source_info.type == 'telegram' %}Telegram{% endif %}
+            {% if source_info['type'] == 'youtube' %}YouTube{% elif source_info['type'] == 'telegram' %}Telegram{% endif %}
         </p>
-        <p style="margin: 5px 0;"><strong>URL:</strong> <a href="{{ source_info.url }}" target="_blank">{{ source_info.url }}</a></p>
+        <p style="margin: 5px 0;"><strong>URL:</strong> <a href="{{ source_info['url'] }}" target="_blank">{{ source_info['url'] }}</a></p>
         {% if comments_data %}
-        <p style="margin: 5px 0;"><strong>Собрано комментариев:</strong> {{ comments_data.total_comments }}</p>
-        <p style="margin: 5px 0;"><strong>Уникальных авторов:</strong> {{ comments_data.authors }}</p>
-        <p style="margin: 5px 0;"><strong>Средняя длина комментария:</strong> {{ comments_data.average_comment_length }} символов</p>
+        <p style="margin: 5px 0;"><strong>Собрано комментариев:</strong> {{ comments_data['total_comments'] }}</p>
+        <p style="margin: 5px 0;"><strong>Уникальных авторов:</strong> {{ comments_data['authors'] }}</p>
+        <p style="margin: 5px 0;"><strong>Средняя длина комментария:</strong> {{ comments_data['average_comment_length'] }} символов</p>
         {% endif %}
     </div>
     {% endif %}
@@ -26,11 +26,11 @@
 
 <div class="results-section">
     <h2>Общая статистика по всем комментариям</h2>
-    <p><strong>Всего комментариев:</strong> {{ validation_result.comments_count }}</p>
-    <p><strong>Всего предложений:</strong> {{ validation_result.total_sentences_count }}</p>
-    <p><strong>Проанализировано предложений:</strong> {{ validation_result.total_valid_sentences_count }}</p>
-    {% if validation_result.total_skipped_sentences_count > 0 %}
-    <p><strong>Пропущено предложений:</strong> {{ validation_result.total_skipped_sentences_count }}</p>
+    <p><strong>Всего комментариев:</strong> {{ validation_result['comments_count'] }}</p>
+    <p><strong>Всего предложений:</strong> {{ validation_result['total_sentences_count'] }}</p>
+    <p><strong>Проанализировано предложений:</strong> {{ validation_result['total_valid_sentences_count'] }}</p>
+    {% if validation_result['total_skipped_sentences_count'] > 0 %}
+    <p><strong>Пропущено предложений:</strong> {{ validation_result['total_skipped_sentences_count'] }}</p>
     {% endif %}
 
     <div class="overall-stats">
@@ -44,15 +44,15 @@
         </div>
     </div>
 
-    {% if analysis_result.overall_summary %}
+    {% if analysis_result['overall_summary'] %}
     <div style="margin-top: 20px; padding: 15px; background: #f5f5f5; border-radius: 5px;">
         <h3>Сводка по всем комментариям</h3>
         <p><strong>Доминирующая эмоция:</strong>
-            <span class="emotion-badge emotion-{{ analysis_result.overall_summary.dominant_emotion }}">
-                {{ analysis_result.overall_summary.dominant_emotion }}
+            <span class="emotion-badge emotion-{{ analysis_result['overall_summary']['dominant_emotion'] }}">
+                {{ analysis_result['overall_summary']['dominant_emotion'] }}
             </span>
         </p>
-        <p><strong>Средняя уверенность:</strong> {{ (analysis_result.overall_summary.average_confidence * 100)|round(1) }}%</p>
+        <p><strong>Средняя уверенность:</strong> {{ (analysis_result['overall_summary']['average_confidence'] * 100)|round(1) }}%</p>
     </div>
     {% endif %}
 </div>
@@ -62,63 +62,63 @@
 
     {% for comment in analysis_result.comments %}
     <div class="comment-block" style="border: 2px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 30px; background: #fafafa;">
-        <h3 style="color: #1976d2; margin-top: 0;">📝 Комментарий {{ comment.comment_index + 1 }}</h3>
+        <h3 style="color: #1976d2; margin-top: 0;">📝 Комментарий {{ comment['comment_index'] + 1 }}</h3>
 
         <div style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
             <strong>Текст комментария:</strong>
-            <p style="margin-top: 10px; font-style: italic; color: #555;">{{ comment.original_text }}</p>
+            <p style="margin-top: 10px; font-style: italic; color: #555;">{{ comment['original_text'] }}</p>
         </div>
 
-        {% if comment.valid_sentences_count > 0 %}
+        {% if comment['valid_sentences_count'] > 0 %}
         <div style="background: #e8f5e9; padding: 12px; border-radius: 5px; margin-bottom: 15px;">
-            <p style="margin: 5px 0;"><strong>Предложений проанализировано:</strong> {{ comment.valid_sentences_count }}</p>
-            {% if comment.skipped_sentences_count > 0 %}
-            <p style="margin: 5px 0;"><strong>Предложений пропущено:</strong> {{ comment.skipped_sentences_count }}</p>
+            <p style="margin: 5px 0;"><strong>Предложений проанализировано:</strong> {{ comment['valid_sentences_count'] }}</p>
+            {% if comment['skipped_sentences_count'] > 0 %}
+            <p style="margin: 5px 0;"><strong>Предложений пропущено:</strong> {{ comment['skipped_sentences_count'] }}</p>
             {% endif %}
 
-            {% if comment.comment_summary %}
+            {% if comment['comment_summary'] %}
             <p style="margin: 5px 0;"><strong>Доминирующая эмоция:</strong>
-                <span class="emotion-badge emotion-{{ comment.comment_summary.dominant_emotion }}">
-                    {{ comment.comment_summary.dominant_emotion }}
+                <span class="emotion-badge emotion-{{ comment['comment_summary']['dominant_emotion'] }}">
+                    {{ comment['comment_summary']['dominant_emotion'] }}
                 </span>
             </p>
-            <p style="margin: 5px 0;"><strong>Средняя уверенность:</strong> {{ (comment.comment_summary.average_confidence * 100)|round(1) }}%</p>
+            <p style="margin: 5px 0;"><strong>Средняя уверенность:</strong> {{ (comment['comment_summary']['average_confidence'] * 100)|round(1) }}%</p>
             {% endif %}
         </div>
 
-        {% if comment.comment_chart %}
+        {% if comment['comment_chart'] %}
         <div class="chart-container" style="margin-bottom: 20px;">
             <h4>Общее распределение эмоций в комментарии</h4>
-            <img src="{{ comment.comment_chart }}" alt="Распределение эмоций в комментарии {{ comment.comment_index + 1 }}" class="chart">
+            <img src="{{ comment['comment_chart'] }}" alt="Распределение эмоций в комментарии {{ comment['comment_index'] + 1 }}" class="chart">
         </div>
         {% endif %}
 
         <h4 style="margin-top: 20px; color: #666;">Анализ предложений:</h4>
-        {% for result in comment.sentence_results %}
+        {% for result in comment['sentence_results'] %}
         <div class="sentence-result" style="background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #2196f3; border-radius: 4px;">
             <div style="margin-bottom: 10px;">
-                <strong>Предложение {{ result.sentence_index_in_comment + 1 }}:</strong>
-                <span style="color: #555;">"{{ result.text }}"</span>
+                <strong>Предложение {{ result['sentence_index_in_comment'] + 1 }}:</strong>
+                <span style="color: #555;">"{{ result['text'] }}"</span>
             </div>
             <div class="emotion-result">
                 Основная эмоция:
-                <span class="emotion-badge emotion-{{ result.emotion }}">
-                    {{ result.emotion }} ({{ (result.confidence * 100)|round(1) }}%)
+                <span class="emotion-badge emotion-{{ result['emotion'] }}">
+                    {{ result['emotion'] }} ({{ (result['confidence'] * 100)|round(1) }}%)
                 </span>
             </div>
             <div class="chart-container" style="margin-top: 10px;">
-                <img src="{{ result.chart }}" alt="Диаграмма эмоций" class="chart" style="max-width: 400px;">
+                <img src="{{ result['chart'] }}" alt="Диаграмма эмоций" class="chart" style="max-width: 400px;">
             </div>
         </div>
         {% endfor %}
 
-        {% if comment.skipped_sentences and comment.skipped_sentences|length > 0 %}
+        {% if comment['skipped_sentences'] and comment['skipped_sentences']|length > 0 %}
         <div style="background: #fff3cd; padding: 12px; border-left: 4px solid #ffc107; margin-top: 15px; border-radius: 4px;">
             <h4 style="margin-top: 0; color: #856404;">⚠️ Пропущенные предложения:</h4>
-            {% for skipped in comment.skipped_sentences %}
+            {% for skipped in comment['skipped_sentences'] %}
             <div style="margin-bottom: 8px;">
-                <div><strong>Предложение {{ skipped.sentence_index + 1 }}:</strong> "{{ skipped.sentence }}"</div>
-                <div style="color: #856404; font-size: 0.9em;"><strong>Причина:</strong> {{ skipped.reason }}</div>
+                <div><strong>Предложение {{ skipped['sentence_index'] + 1 }}:</strong> "{{ skipped['sentence'] }}"</div>
+                <div style="color: #856404; font-size: 0.9em;"><strong>Причина:</strong> {{ skipped['reason'] }}</div>
             </div>
             {% endfor %}
         </div>
@@ -127,13 +127,13 @@
         {% else %}
         <div style="background: #ffebee; padding: 12px; border-radius: 5px; color: #c62828;">
             <strong>⚠️ В этом комментарии не найдено валидных предложений для анализа</strong>
-            {% if comment.skipped_sentences and comment.skipped_sentences|length > 0 %}
+            {% if comment['skipped_sentences'] and comment['skipped_sentences']|length > 0 %}
             <div style="margin-top: 10px;">
                 <strong>Пропущенные предложения:</strong>
-                {% for skipped in comment.skipped_sentences %}
+                {% for skipped in comment['skipped_sentences'] %}
                 <div style="margin: 5px 0;">
-                    <div>"{{ skipped.sentence }}"</div>
-                    <div style="font-size: 0.9em;">Причина: {{ skipped.reason }}</div>
+                    <div>"{{ skipped['sentence'] }}"</div>
+                    <div style="font-size: 0.9em;">Причина: {{ skipped['reason'] }}</div>
                 </div>
                 {% endfor %}
             </div>

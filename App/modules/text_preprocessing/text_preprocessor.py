@@ -52,7 +52,7 @@ class TextPreprocessor:
         if not text or not text.strip():
             return []
 
-        separator = '\n' + '_' * 20 + '\n'
+        separator = '\n' + '_' * 2 + '\n'
         comments = text.split(separator)
         comments = [c.strip() for c in comments if c.strip()]
 

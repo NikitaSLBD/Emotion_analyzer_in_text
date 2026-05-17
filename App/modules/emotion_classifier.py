@@ -362,7 +362,10 @@ class RuBertEmotionAnalyzer:
                     "original_text": comment_data['original_text'],
                     "sentence_results": [],
                     "comment_summary": None,
-                    "skipped_sentences": comment_data.get('skipped_sentences', [])
+                    "comment_chart": None,
+                    "skipped_sentences": comment_data.get('skipped_sentences', []),
+                    "valid_sentences_count": 0,
+                    "skipped_sentences_count": len(comment_data.get('skipped_sentences', []))
                 })
                 continue
 

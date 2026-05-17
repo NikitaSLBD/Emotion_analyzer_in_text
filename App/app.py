@@ -9,6 +9,8 @@ from typing import List, Optional
 import tempfile
 import os
 
+from infrastructure.config import settings
+
 from modules.emotion_classifier import RuBertEmotionAnalyzer
 from modules.text_preprocessing import TextPreprocessor
 from modules.logger import get_logger
@@ -24,7 +26,6 @@ from modules.auth import (
 from modules.user_control import get_current_user_optional, get_current_user_required
 from modules.data import UserCreate, Token, UserResponse
 from modules.social_media import CollectorFactory
-from Emotion_analyzer_in_text.App.infrastructure.config import settings
 from pathlib import Path
 
 logger = get_logger("web")
@@ -349,7 +350,7 @@ async def analyze_text(
         })
 
     # Определяем, есть ли комментарии в тексте
-    has_comments = '\n' + '_' * 20 + '\n' in input_text
+    has_comments = '\n' + '_' * 2 + '\n' in input_text
 
     if has_comments:
         # Иерархический анализ с комментариями

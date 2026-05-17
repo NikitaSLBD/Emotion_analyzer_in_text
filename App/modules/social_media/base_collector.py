@@ -106,7 +106,7 @@ class BaseCollector(ABC):
         Returns:
             Объединенный текст всех комментариев
         """
-        return f'\n{"_" * 20}\n'.join([
+        return f'\n{"_" * 2}\n'.join([
             f"{comment.text}. "
             for comment in comments
         ])

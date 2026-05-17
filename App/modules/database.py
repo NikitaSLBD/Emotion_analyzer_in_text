@@ -1,8 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from Emotion_analyzer_in_text.App.infrastructure.config import settings
 from modules.logger import get_logger
+from App.infrastructure.config import settings
 
 logger = get_logger("database")
 

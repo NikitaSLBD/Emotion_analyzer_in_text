@@ -18,3 +18,4 @@ pymorphy3-dicts-ru
 pyaspeller
 pydantic-settings
 pydantic[email]
+openai
