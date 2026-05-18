@@ -229,6 +229,99 @@ async def history_page(
         "total": len(analyses)
     })
 
+@app.get("/analysis/{analysis_id}")
+async def analysis_detail(
+    analysis_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required)
+):
+    """Просмотр деталей конкретного анализа"""
+    from modules.visualization import EmotionVisualizer
+
+    analysis = db.query(TextAnalysis).filter(
+        TextAnalysis.id == analysis_id,
+        TextAnalysis.user_id == current_user.id
+    ).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Анализ не найден")
+
+    # Определяем тип анализа по структуре данных
+    analysis_data = analysis.analysis_results
+    is_hierarchical = 'comments' in analysis_data
+
+    # Создаем визуализатор для пересоздания диаграмм
+    visualizer = EmotionVisualizer()
+
+    if is_hierarchical:
+        # Пересоздаем визуализации для иерархического анализа
+        all_sentence_results = []
+        for comment in analysis_data.get('comments', []):
+            for sentence in comment.get('sentence_results', []):
+                all_sentence_results.append(sentence)
+
+        # Создаем визуализации
+        if all_sentence_results:
+            overall_visualization = visualizer.create_visualizations(all_sentence_results)
+        else:
+            overall_visualization = {}
+
+        # Иерархический анализ (с комментариями)
+        return templates.TemplateResponse("results_hierarchical.html", {
+            "request": request,
+            "user": current_user,
+            "analysis_id": analysis.id,
+            "original_text": analysis.original_text,
+            "source_info": analysis_data.get('source'),
+            "comments_data": analysis_data.get('comments_statistics'),
+            "validation_result": {
+                'comments_count': analysis_data.get('comments_count', 0),
+                'total_sentences_count': analysis_data.get('total_sentences_count', 0),
+                'total_valid_sentences_count': analysis_data.get('total_valid_sentences_count', 0),
+                'total_skipped_sentences_count': analysis_data.get('total_skipped_sentences_count', 0),
+            },
+            "analysis_result": {
+                'comments': analysis_data.get('comments', []),
+                'overall_summary': analysis_data.get('overall_summary', {}),
+                'overall_visualization': overall_visualization,
+                'total_comments': analysis_data.get('total_comments', 0),
+                'total_analyzed_sentences': analysis_data.get('total_analyzed_sentences', 0)
+            },
+            **overall_visualization
+        })
+    else:
+        # Пересоздаем визуализации для обычного анализа
+        sentence_results = analysis_data.get('sentence_results', [])
+
+        if sentence_results:
+            visualization_data = visualizer.create_visualizations(sentence_results)
+        else:
+            visualization_data = {
+                'overall_chart': '',
+                'frequency_chart': '',
+                'emotion_counts': {},
+                'total_sentences': 0
+            }
+
+        # Обычный анализ
+        return templates.TemplateResponse("results.html", {
+            "request": request,
+            "user": current_user,
+            "analysis_id": analysis.id,
+            "original_text": analysis.original_text,
+            "processed_text": analysis_data.get('processed_text', analysis.original_text),
+            "was_corrected": analysis_data.get('validation', {}).get('has_corrections', False),
+            "corrections": analysis_data.get('validation', {}).get('spell_corrections', []),
+            "sentence_results": sentence_results,
+            "source_info": analysis_data.get('source'),
+            "comments_data": analysis_data.get('comments_statistics'),
+            "skipped_sentences": analysis_data.get('skipped_sentences', []),
+            "valid_sentences_count": analysis_data.get('valid_sentences_count', 0),
+            "total_sentences_count": analysis_data.get('total_sentences_count', 0),
+            **visualization_data
+        })
+
 @app.post("/analyze")
 async def analyze_text(
     request: Request,
@@ -270,14 +363,25 @@ async def analyze_text(
             elif source_type == 'telegram':
                 api_id = settings.TELEGRAM_API_ID
                 api_hash = settings.TELEGRAM_API_HASH
+                bot_token = settings.TELEGRAM_BOT_TOKEN
+
+                # Проверяем наличие api_id и api_hash (обязательны даже для ботов)
                 if not api_id or not api_hash:
                     return templates.TemplateResponse("error.html", {
                         "request": request,
-                        "error": "Telegram API данные не настроены. Обратитесь к администратору.",
+                        "error": "Telegram API данные не настроены. Укажите TELEGRAM_API_ID и TELEGRAM_API_HASH (обязательны даже для ботов).",
                         "user": current_user
                     })
+
                 credentials['api_id'] = int(api_id)
                 credentials['api_hash'] = api_hash
+
+                # Если есть bot_token, используем Bot API
+                if bot_token:
+                    credentials['bot_token'] = bot_token
+                    logger.info("Using Telegram Bot API")
+                else:
+                    logger.info("Using Telegram User API (anonymous access)")
 
             # Создаем коллектор
             collector = CollectorFactory.create_collector(source_type, credentials)
@@ -408,13 +512,17 @@ async def analyze_text(
 
             db.add(db_analysis)
             db.commit()
+            db.refresh(db_analysis)  # Получаем ID после commit
             logger.info(f"Hierarchical analysis saved to database for user {current_user.username}")
+            analysis_id = db_analysis.id
         else:
             logger.info("Hierarchical analysis performed for anonymous user, not saved to database")
+            analysis_id = None
 
         return templates.TemplateResponse("results_hierarchical.html", {
             "request": request,
             "user": current_user,
+            "analysis_id": analysis_id,
             "original_text": input_text,
             "source_info": source_info,
             "comments_data": comments_data,
@@ -498,13 +606,17 @@ async def analyze_text(
 
         db.add(db_analysis)
         db.commit()
+        db.refresh(db_analysis)  # Получаем ID после commit
         logger.info(f"Analysis saved to database for user {current_user.username}")
+        analysis_id = db_analysis.id
     else:
         logger.info("Analysis performed for anonymous user, not saved to database")
+        analysis_id = None
 
     return templates.TemplateResponse("results.html", {
         "request": request,
         "user": current_user,
+        "analysis_id": analysis_id,
         "original_text": input_text,
         "processed_text": validation_result['corrected_text'],
         "was_corrected": validation_result['has_corrections'],
@@ -535,3 +647,113 @@ async def health_check():
         "status": "healthy",
         "model_loaded": emotion_analyzer.is_loaded()
     }
+
+# Export routes
+@app.get("/export/json/{analysis_id}")
+async def export_analysis_json(
+    analysis_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required)
+):
+    """Экспорт результатов анализа в JSON"""
+    from modules.analysis_results_handler import AnalysisResultsHandler
+    from fastapi.responses import FileResponse
+    import tempfile
+    import os
+
+    # Получаем анализ из БД
+    analysis = db.query(TextAnalysis).filter(
+        TextAnalysis.id == analysis_id,
+        TextAnalysis.user_id == current_user.id
+    ).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Анализ не найден")
+
+    # Создаем обработчик результатов
+    results_handler = AnalysisResultsHandler()
+
+    # Создаем временный файл
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8') as f:
+        temp_path = f.name
+
+    try:
+        # Сохраняем в JSON
+        success = results_handler.save_to_json(analysis.analysis_results, temp_path)
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Ошибка создания JSON файла")
+
+        # Формируем имя файла
+        timestamp = analysis.created_at.strftime('%Y%m%d_%H%M%S')
+        filename = f"analysis_{analysis_id}_{timestamp}.json"
+
+        return FileResponse(
+            temp_path,
+            media_type='application/json',
+            filename=filename,
+            background=None
+        )
+    except Exception as e:
+        # Удаляем временный файл в случае ошибки
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        logger.error(f"Ошибка экспорта JSON: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка экспорта: {str(e)}")
+
+@app.get("/export/html/{analysis_id}")
+async def export_analysis_html(
+    analysis_id: int,
+    include_details: bool = True,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required)
+):
+    """Экспорт результатов анализа в HTML"""
+    from modules.analysis_results_handler import AnalysisResultsHandler
+    from fastapi.responses import FileResponse
+    import tempfile
+    import os
+
+    # Получаем анализ из БД
+    analysis = db.query(TextAnalysis).filter(
+        TextAnalysis.id == analysis_id,
+        TextAnalysis.user_id == current_user.id
+    ).first()
+
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Анализ не найден")
+
+    # Создаем обработчик результатов
+    results_handler = AnalysisResultsHandler()
+
+    # Создаем временный файл
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
+        temp_path = f.name
+
+    try:
+        # Создаем HTML
+        success = results_handler.export_to_html(
+            analysis.analysis_results,
+            temp_path,
+            include_sentence_details=include_details
+        )
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Ошибка создания HTML файла")
+
+        # Формируем имя файла
+        timestamp = analysis.created_at.strftime('%Y%m%d_%H%M%S')
+        filename = f"analysis_report_{analysis_id}_{timestamp}.html"
+
+        return FileResponse(
+            temp_path,
+            media_type='text/html',
+            filename=filename,
+            background=None
+        )
+    except Exception as e:
+        # Удаляем временный файл в случае ошибки
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        logger.error(f"Ошибка экспорта HTML: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка экспорта: {str(e)}")

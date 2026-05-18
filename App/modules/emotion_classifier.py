@@ -3,13 +3,9 @@ import torch.nn as nn
 from transformers import AutoTokenizer, AutoConfig, AutoModel
 from typing import Dict, List
 from pathlib import Path
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import io
-import base64
 
 from modules.logger import get_logger, log_function_call
+from modules.visualization import EmotionVisualizer
 
 class RuBertEmotionClassifier(nn.Module):
     def __init__(self, num_labels=6, model_name=None):
@@ -55,23 +51,15 @@ class RuBertEmotionAnalyzer:
         self.tokenizer = None
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.logger = get_logger("rubert_base_analyzer")
-        
+        self.visualizer = EmotionVisualizer()
+
         self.id2label = {
-            0: "грусть", 
+            0: "грусть",
             1: "радость",
             2: "любовь",
             3: "злость",
             4: "страх",
             5: "удивление"
-        }
-        
-        self.emotion_colors = {
-            "грусть": "#3498db", 
-            "радость": "#2ecc71",
-            "любовь": "#cb4184",
-            "злость": "#eb2222",
-            "страх": "#95a5a6",
-            "удивление": "#f1c40f"
         }
 
     @log_function_call("rubert_base_model")
@@ -198,111 +186,17 @@ class RuBertEmotionAnalyzer:
         self.logger.info(f"RuBERT-base-cased анализ завершен: {len(results)} из {len(sentences)} предложений")
         return results
 
-    @log_function_call("visualization")
     def create_emotion_chart(self, probabilities: Dict[str, float], title: str) -> str:
-        """Создание круговой диаграммы для эмоций"""
-        try:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            
-            emotions = list(probabilities.keys())
-            probs = list(probabilities.values())
-            colors = [self.emotion_colors.get(emotion, '#cccccc') for emotion in emotions]
-            
-            wedges, texts, autotexts = ax.pie(probs, labels=emotions, colors=colors, 
-                                             autopct='%1.1f%%', startangle=90)
-            
-            for autotext in autotexts:
-                autotext.set_color('white')
-                autotext.set_fontweight('bold')
-            
-            ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
-            
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', bbox_inches='tight', dpi=100)
-            buffer.seek(0)
-            image_base64 = base64.b64encode(buffer.getvalue()).decode()
-            plt.close()
-            
-            self.logger.debug(f"Создана круговая диаграмма: {title}")
-            return f"data:image/png;base64,{image_base64}"
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка создания круговой диаграммы: {str(e)}")
-            return ""
+        """Создание круговой диаграммы для эмоций (делегирует в visualizer)"""
+        return self.visualizer.create_emotion_chart(probabilities, title)
 
-    @log_function_call("visualization")
     def create_frequency_chart(self, emotion_counts: Dict[str, int]) -> str:
-        """Создание диаграммы частоты эмоций"""
-        try:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            emotions = list(emotion_counts.keys())
-            counts = list(emotion_counts.values())
-            colors = [self.emotion_colors.get(emotion, '#cccccc') for emotion in emotions]
-            
-            bars = ax.bar(emotions, counts, color=colors)
-            ax.set_title('Частота эмоций в тексте', fontsize=14, fontweight='bold')
-            ax.set_ylabel('Количество предложений')
-            
-            for bar, count in zip(bars, counts):
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                        f'{count}', ha='center', va='bottom', fontweight='bold')
-            
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', bbox_inches='tight', dpi=100)
-            buffer.seek(0)
-            frequency_chart = f"data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}"
-            plt.close()
-            
-            self.logger.debug("Создана диаграмма частоты эмоций")
-            return frequency_chart
-            
-        except Exception as e:
-            self.logger.error(f"Ошибка создания диаграммы частоты: {str(e)}")
-            return ""
+        """Создание диаграммы частоты эмоций (делегирует в visualizer)"""
+        return self.visualizer.create_frequency_chart(emotion_counts)
 
-    @log_function_call("visualization")
     def create_visualizations(self, sentence_results: List[Dict]) -> Dict:
-        """Создание всех визуализаций для результатов"""
-        self.logger.info("Создание визуализаций для результатов анализа")
-        
-        # Создаем диаграммы для каждого предложения
-        for i, result in enumerate(sentence_results):
-            result['chart'] = self.create_emotion_chart(
-                result['all_probabilities'], 
-                f"Предложение {i+1}: {result['text'][:30]}..."
-            )
-        
-        overall_probs = {}
-        emotion_counts = {}
-        
-        for result in sentence_results:
-            for emotion, prob in result['all_probabilities'].items():
-                if emotion not in overall_probs:
-                    overall_probs[emotion] = 0
-                overall_probs[emotion] += prob
-            
-            emotion = result['emotion']
-            emotion_counts[emotion] = emotion_counts.get(emotion, 0) + 1
-        
-        # Усредняем вероятности
-        for emotion in overall_probs:
-            overall_probs[emotion] /= len(sentence_results)
-        
-        # Общая диаграмма
-        overall_chart = self.create_emotion_chart(overall_probs, "Общее распределение эмоций")
-        
-        # Диаграмма частоты эмоций
-        frequency_chart = self.create_frequency_chart(emotion_counts)
-        
-        self.logger.info("Визуализации успешно созданы")
-        
-        return {
-            "overall_chart": overall_chart,
-            "frequency_chart": frequency_chart,
-            "emotion_counts": emotion_counts,
-            "total_sentences": len(sentence_results)
-        }
+        """Создание всех визуализаций для результатов (делегирует в visualizer)"""
+        return self.visualizer.create_visualizations(sentence_results)
     
     @log_function_call("preparing_for_storage")
     def prepare_analysis_for_storage(self, original_text: str, analysis_results: List[Dict]) -> Dict:
@@ -375,7 +269,7 @@ class RuBertEmotionAnalyzer:
 
             # Создаем визуализации для каждого предложения
             for i, result in enumerate(sentence_results):
-                result['chart'] = self.create_emotion_chart(
+                result['chart'] = self.visualizer.create_emotion_chart(
                     result['all_probabilities'],
                     f"Комментарий {comment_index + 1}, Предложение {i + 1}"
                 )
@@ -397,7 +291,7 @@ class RuBertEmotionAnalyzer:
                 for emotion in overall_probs:
                     overall_probs[emotion] /= len(sentence_results)
 
-                comment_chart = self.create_emotion_chart(
+                comment_chart = self.visualizer.create_emotion_chart(
                     overall_probs,
                     f"Комментарий {comment_index + 1}: Общее распределение"
                 )
@@ -419,7 +313,7 @@ class RuBertEmotionAnalyzer:
 
         # Создаем общую статистику по всем комментариям
         if all_sentence_results:
-            overall_visualization = self.create_visualizations(all_sentence_results)
+            overall_visualization = self.visualizer.create_visualizations(all_sentence_results)
             overall_summary = self._create_analysis_summary(all_sentence_results)
         else:
             overall_visualization = {}

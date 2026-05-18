@@ -7,6 +7,13 @@
 
 <h1>Результаты анализа эмоций</h1>
 
+{% if analysis_id and user %}
+<div class="export-buttons" style="margin-bottom: 20px;">
+    <a href="/export/json/{{ analysis_id }}" class="btn btn-secondary" download>📥 Скачать JSON</a>
+    <a href="/export/html/{{ analysis_id }}" class="btn btn-secondary" download>🌐 Скачать HTML</a>
+</div>
+{% endif %}
+
 <div class="results-section">
     <h2>Анализированный текст</h2>
     {% if source_info and source_info.type in ['youtube', 'telegram'] %}

@@ -25,20 +25,13 @@
             <option value="telegram">Telegram</option>
         </select>
 
-        <label for="source_url" style="margin-top: 15px;">URL видео/канала:</label>
+        <label for="source_url" style="margin-top: 15px;">URL видео/поста:</label>
         <input type="text" id="source_url" name="source_url" class="form-input"
                placeholder="https://youtube.com/watch?v=... или https://t.me/channel">
 
         <label for="max_comments" style="margin-top: 15px;">Количество комментариев:</label>
         <input type="number" id="max_comments" name="max_comments" class="form-input"
                value="50" min="1" max="500">
-
-        <div class="api-info">
-            <p id="apiKeyInfo">
-                <strong>YouTube:</strong> Требуется API ключ.
-                <a href="https://console.cloud.google.com/" target="_blank">Получить ключ</a>
-            </p>
-        </div>
     </div>
 
     <button type="submit" class="btn" id="analyzeBtn">Анализировать эмоции</button>

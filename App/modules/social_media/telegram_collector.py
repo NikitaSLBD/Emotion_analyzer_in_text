@@ -14,7 +14,13 @@ class TelegramCollector(BaseCollector):
     """Коллектор сообщений из публичных каналов Telegram"""
 
     def _validate_credentials(self) -> None:
-        """Проверяет наличие API ID и Hash для Telegram"""
+        """Проверяет наличие API ID и Hash для Telegram или Bot Token"""
+        # Проверяем, есть ли bot_token
+        if 'bot_token' in self.credentials and self.credentials['bot_token']:
+            logger.info("Telegram Bot Token provided, will use Bot API")
+            return
+
+        # Если нет bot_token, проверяем api_id и api_hash
         required = ['api_id', 'api_hash']
         missing = [key for key in required if key not in self.credentials]
 
@@ -22,7 +28,7 @@ class TelegramCollector(BaseCollector):
             logger.error(f"Missing Telegram credentials: {', '.join(missing)}")
             raise ValueError(
                 f"Отсутствуют учетные данные: {', '.join(missing)}. "
-                "Получите их на https://my.telegram.org/apps"
+                "Получите их на https://my.telegram.org/apps или используйте bot_token от @BotFather"
             )
         logger.info("Telegram API credentials validated")
 
@@ -106,34 +112,86 @@ class TelegramCollector(BaseCollector):
 
         logger.info(f"Starting to collect messages from Telegram channel: {channel_name}, max_comments: {max_comments}")
 
-        client = TelegramClient(
-            'session_' + channel_name,
-            self.credentials['api_id'],
-            self.credentials['api_hash']
-        )
+        # Определяем, используем ли Bot API или User API
+        use_bot = 'bot_token' in self.credentials and self.credentials['bot_token']
+
+        # Создаем клиент (api_id и api_hash нужны всегда, даже для ботов)
+        if use_bot:
+            client = TelegramClient(
+                'bot_session',
+                self.credentials['api_id'],
+                self.credentials['api_hash']
+            )
+        else:
+            client = TelegramClient(
+                'session_' + channel_name,
+                self.credentials['api_id'],
+                self.credentials['api_hash']
+            )
 
         try:
-            await client.start()
+            if use_bot:
+                # Авторизуемся как бот
+                await client.start(bot_token=self.credentials['bot_token'])
+                logger.info("Connected as Telegram Bot")
+            else:
+                # Подключаемся без авторизации (только для публичных каналов)
+                await client.connect()
+
+                # Проверяем, авторизованы ли мы уже
+                if not await client.is_user_authorized():
+                    logger.info("Client not authorized, using anonymous access for public channels")
 
             comments = []
 
             if post_id:
                 # Получаем комментарии к конкретному посту
+                message = None  # Инициализируем переменную
                 try:
                     # Получаем сам пост
                     message = await client.get_messages(channel_name, ids=post_id)
+
                     if message:
-                        # Получаем обсуждение поста (если есть)
-                        async for msg in client.iter_messages(
-                            channel_name,
-                            reply_to=post_id,
-                            limit=max_comments
-                        ):
-                            comment = self._message_to_comment(msg, channel_name)
+                        # Проверяем, есть ли у канала discussion группа (для комментариев)
+                        channel_entity = await client.get_entity(channel_name)
+
+                        if hasattr(channel_entity, 'linked_chat_id') and channel_entity.linked_chat_id:
+                            # Есть discussion группа - получаем комментарии оттуда
+                            logger.info(f"Found discussion group for channel {channel_name}")
+                            try:
+                                # Получаем комментарии из discussion группы
+                                async for msg in client.iter_messages(
+                                    channel_entity.linked_chat_id,
+                                    reply_to=post_id,
+                                    limit=max_comments
+                                ):
+                                    comment = self._message_to_comment(msg, channel_name)
+                                    if comment:
+                                        comments.append(comment)
+                            except Exception as e:
+                                logger.warning(f"Could not get comments from discussion group: {str(e)}")
+                        else:
+                            # Нет discussion группы - пробуем получить replies напрямую
+                            logger.info(f"No discussion group found, trying direct replies")
+                            async for msg in client.iter_messages(
+                                channel_name,
+                                reply_to=post_id,
+                                limit=max_comments
+                            ):
+                                comment = self._message_to_comment(msg, channel_name)
+                                if comment:
+                                    comments.append(comment)
+
+                        # Если комментариев не найдено, возвращаем сам пост
+                        if not comments:
+                            logger.info(f"No comments found for post {post_id}, returning the post itself")
+                            comment = self._message_to_comment(message, channel_name)
                             if comment:
                                 comments.append(comment)
-                except Exception:
-                    # Если нет обсуждений, просто возвращаем сам пост
+
+                except Exception as e:
+                    logger.warning(f"Could not get replies for post {post_id}: {str(e)}")
+                    # Если произошла ошибка, возвращаем сам пост
                     if message:
                         comment = self._message_to_comment(message, channel_name)
                         if comment:
@@ -211,16 +269,25 @@ class TelegramCollector(BaseCollector):
         """
         import asyncio
 
-        # Создаем новый event loop если его нет
+        # Проверяем, есть ли уже запущенный event loop
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
+            # Если loop уже запущен (например, в FastAPI), создаем новый в отдельном потоке
+            import nest_asyncio
+            nest_asyncio.apply()
+            return asyncio.run(
+                self._collect_comments_async(source_url, max_comments, include_replies)
+            )
         except RuntimeError:
+            # Если loop не запущен, создаем новый
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-
-        return loop.run_until_complete(
-            self._collect_comments_async(source_url, max_comments, include_replies)
-        )
+            try:
+                return loop.run_until_complete(
+                    self._collect_comments_async(source_url, max_comments, include_replies)
+                )
+            finally:
+                loop.close()
 
     async def get_channel_info_async(self, channel_url: str) -> Dict:
         """
@@ -241,14 +308,36 @@ class TelegramCollector(BaseCollector):
         if '/' in channel_name:
             channel_name = channel_name.split('/')[0]
 
-        client = TelegramClient(
-            'session_' + channel_name,
-            self.credentials['api_id'],
-            self.credentials['api_hash']
-        )
+        # Определяем, используем ли Bot API или User API
+        use_bot = 'bot_token' in self.credentials and self.credentials['bot_token']
+
+        # Создаем клиент (api_id и api_hash нужны всегда, даже для ботов)
+        if use_bot:
+            client = TelegramClient(
+                'bot_session',
+                self.credentials['api_id'],
+                self.credentials['api_hash']
+            )
+        else:
+            client = TelegramClient(
+                'session_' + channel_name,
+                self.credentials['api_id'],
+                self.credentials['api_hash']
+            )
 
         try:
-            await client.start()
+            if use_bot:
+                # Авторизуемся как бот
+                await client.start(bot_token=self.credentials['bot_token'])
+                logger.info("Connected as Telegram Bot")
+            else:
+                # Подключаемся без авторизации (только для публичных каналов)
+                await client.connect()
+
+                # Проверяем, авторизованы ли мы уже
+                if not await client.is_user_authorized():
+                    logger.info("Client not authorized, using anonymous access for public channels")
+
             entity = await client.get_entity(channel_name)
 
             return {
@@ -273,10 +362,18 @@ class TelegramCollector(BaseCollector):
         """
         import asyncio
 
+        # Проверяем, есть ли уже запущенный event loop
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
+            # Если loop уже запущен, создаем новый в отдельном потоке
+            import nest_asyncio
+            nest_asyncio.apply()
+            return asyncio.run(self.get_channel_info_async(channel_url))
         except RuntimeError:
+            # Если loop не запущен, создаем новый
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-
-        return loop.run_until_complete(self.get_channel_info_async(channel_url))
+            try:
+                return loop.run_until_complete(self.get_channel_info_async(channel_url))
+            finally:
+                loop.close()

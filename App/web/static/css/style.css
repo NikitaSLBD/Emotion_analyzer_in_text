@@ -488,3 +488,24 @@ input[type="file"] {
     font-size: 12px;
     color: #6c757d;
 }
+/* Export buttons */
+.export-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-secondary {
+    background-color: #27ae60;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #229954;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 14px;
+}
