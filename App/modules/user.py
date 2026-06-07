@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey, JSON
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from modules.database import Base
-from modules.logger import get_logger
+from App.modules.database import Base
+from App.modules.logger import get_logger
 
 logger = get_logger("models")
 
@@ -19,7 +19,7 @@ class User(Base):
     
     # Relationships
     analyses = relationship("TextAnalysis", back_populates="user")
-
+    
 class TextAnalysis(Base):
     __tablename__ = "text_analyses"
     

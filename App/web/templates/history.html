@@ -14,8 +14,9 @@
     <div class="analysis-item">
         <div class="analysis-header">
             <span class="analysis-date">{{ analysis.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
-            {% if analysis.analysis_results.overall_summary %}
-            <span class="analysis-sentences">{{ analysis.analysis_results.overall_summary.total_sentences }} предложений</span>
+            {% set summary = analysis.analysis_results.overall_summary or analysis.analysis_results.summary %}
+            {% if summary %}
+            <span class="analysis-sentences">{{ summary.total_sentences }} предложений</span>
             {% endif %}
         </div>
 
@@ -23,16 +24,17 @@
             <strong>Текст:</strong> {{ analysis.original_text[:100] }}{% if analysis.original_text|length > 100 %}...{% endif %}
         </div>
 
-        {% if analysis.analysis_results.overall_summary %}
+        {% set summary = analysis.analysis_results.overall_summary or analysis.analysis_results.summary %}
+        {% if summary %}
         <div class="analysis-summary">
             <strong>Основная эмоция:</strong>
-            <span class="emotion-badge emotion-{{ analysis.analysis_results.overall_summary.dominant_emotion }}">
-                {{ analysis.analysis_results.overall_summary.dominant_emotion }}
+            <span class="emotion-badge emotion-{{ summary.dominant_emotion }}">
+                {{ summary.dominant_emotion }}
             </span>
-            <strong>Уверенность:</strong> {{ (analysis.analysis_results.overall_summary.average_confidence * 100)|round(1) }}%
+            <strong>Уверенность:</strong> {{ (summary.average_confidence * 100)|round(1) }}%
         </div>
         {% endif %}
-        
+
         <div class="analysis-actions">
             <a href="/analysis/{{ analysis.id }}" class="btn btn-small">Просмотреть детали</a>
             <a href="/export/json/{{ analysis.id }}" class="btn btn-small btn-secondary" download>Скачать JSON</a>

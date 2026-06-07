@@ -3,8 +3,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from modules.logger import get_logger, log_function_call
-from modules.visualization import EmotionVisualizer
+from App.modules.logger import get_logger, log_function_call
+from App.modules.visualization import EmotionVisualizer
 
 
 class AnalysisResultsHandler:
@@ -16,6 +16,7 @@ class AnalysisResultsHandler:
 
     @log_function_call("analysis_results_handler")
     def save_to_json(self, analysis_data: Dict, output_path: str) -> bool:
+
         """Сохранение результатов анализа в JSON файл
 
         Args:
@@ -25,6 +26,7 @@ class AnalysisResultsHandler:
         Returns:
             True если успешно, False в случае ошибки
         """
+
         try:
             output_file = Path(output_path)
             output_file.parent.mkdir(parents=True, exist_ok=True)
@@ -52,6 +54,7 @@ class AnalysisResultsHandler:
         Returns:
             Очищенные данные для JSON
         """
+        
         json_data = {
             "metadata": {
                 "timestamp": datetime.now().isoformat(),

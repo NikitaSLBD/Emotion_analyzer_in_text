@@ -4,8 +4,8 @@ from transformers import AutoTokenizer, AutoConfig, AutoModel
 from typing import Dict, List
 from pathlib import Path
 
-from modules.logger import get_logger, log_function_call
-from modules.visualization import EmotionVisualizer
+from App.modules.logger import get_logger, log_function_call
+from App.modules.visualization import EmotionVisualizer
 
 class RuBertEmotionClassifier(nn.Module):
     def __init__(self, num_labels=6, model_name=None):
@@ -204,7 +204,7 @@ class RuBertEmotionAnalyzer:
         return {
             "original_text": original_text,
             "sentences_count": len(analysis_results),
-            "analysis_results": analysis_results,
+            "sentence_results": analysis_results,
             "summary": self._create_analysis_summary(analysis_results)
         }
 

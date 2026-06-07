@@ -1,9 +1,9 @@
 from fastapi import Request, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from modules.database import get_db
-from modules.auth import get_current_user
-from modules.user import User
-from modules.logger import get_logger
+from App.modules.database import get_db
+from App.modules.auth import get_current_user
+from App.modules.models import User
+from App.modules.logger import get_logger
 from typing import Optional
 
 logger = get_logger("dependencies")

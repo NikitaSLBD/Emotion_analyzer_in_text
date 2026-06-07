@@ -15,7 +15,7 @@ from modules.emotion_classifier import RuBertEmotionAnalyzer
 from modules.text_preprocessing import TextPreprocessor
 from modules.logger import get_logger
 from modules.database import get_db, init_db
-from modules.user import User, TextAnalysis
+from modules.models import User, TextAnalysis
 from modules.auth import (
     get_password_hash,
     authenticate_user,
@@ -35,10 +35,10 @@ async def lifespan(app: FastAPI):
     """Загрузка модели и инициализация БД при запуске приложения"""
     # Инициализация БД
     init_db()
-    
+
     # Загрузка модели
     emotion_analyzer.load_model()
-    
+
     yield
 
 app = FastAPI(
@@ -83,7 +83,7 @@ async def register_web(
     email: str = Form(...),
     username: str = Form(...),
     password: str = Form(...),
-    is_admin: str = Form("false"),  
+    is_admin: str = Form("false"),
     db: Session = Depends(get_db)
 ):
     """Регистрация пользователя (веб-форма)"""
@@ -145,7 +145,7 @@ async def register_web(
         })
 
 @app.get("/users/me", response_model=UserResponse)
-async def read_users_me(current_user: User = Depends(get_current_user)):
+async def read_users_me(current_user = Depends(get_current_user)):
     """Получить информацию о текущем пользователе"""
     return current_user
 
@@ -153,11 +153,11 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 @app.get("/", response_class=HTMLResponse)
 async def home(
     request: Request,
-    current_user: User = Depends(get_current_user_optional)
+    current_user = Depends(get_current_user_optional)
 ):
     """Главная страница с формой ввода"""
     return templates.TemplateResponse("index.html", {
-        "request": request, 
+        "request": request,
         "user": current_user
     })
 
@@ -215,7 +215,7 @@ async def logout():
 async def history_page(
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required)
+    current_user = Depends(get_current_user_required)
 ):
     """Страница истории анализов"""
     analyses = db.query(TextAnalysis).filter(
@@ -234,7 +234,7 @@ async def analysis_detail(
     analysis_id: int,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required)
+    current_user = Depends(get_current_user_required)
 ):
     """Просмотр деталей конкретного анализа"""
     from modules.visualization import EmotionVisualizer
@@ -288,6 +288,7 @@ async def analysis_detail(
                 'total_comments': analysis_data.get('total_comments', 0),
                 'total_analyzed_sentences': analysis_data.get('total_analyzed_sentences', 0)
             },
+            "summarization": analysis_data.get('summarization'),
             **overall_visualization
         })
     else:
@@ -331,9 +332,10 @@ async def analyze_text(
     max_comments: Optional[int] = Form(50),
     auto_correct: bool = Form(False),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_optional)
+    current_user = Depends(get_current_user_optional)
 ):
     """Анализ текста из формы или комментариев из социальных сетей"""
+
     if not emotion_analyzer.is_loaded():
         return templates.TemplateResponse("error.html", {
             "request": request,
@@ -483,6 +485,65 @@ async def analyze_text(
                 "user": current_user
             })
 
+        # Суммаризация комментариев с помощью LLM агента
+        summarization_result = None
+        if comments_data and len(comments) > 0:
+            try:
+                from modules.summarization.agent import analyze_comments
+
+                logger.info(f"=== НАЧАЛО СУММАРИЗАЦИИ ===")
+                logger.info(f"Количество комментариев для суммаризации: {len(comments)}")
+                logger.info(f"Тип переменной comments: {type(comments)}")
+
+                # Подготавливаем комментарии для агента
+                # comments - это список объектов Comment из коллектора
+                comments_for_agent = []
+                for i, comment in enumerate(comments):
+                    # Проверяем, является ли comment словарем или объектом
+                    if isinstance(comment, dict):
+                        comment_data = {
+                            'text': comment.get('text', ''),
+                            'author': comment.get('author', 'Неизвестно'),
+                            'likes': comment.get('likes', 0)
+                        }
+                        logger.info(f"Комментарий {i+1} (dict): автор={comment_data['author']}, текст={comment_data['text'][:50]}...")
+                        comments_for_agent.append(comment_data)
+                    else:
+                        # Если это объект, используем атрибуты
+                        comment_data = {
+                            'text': getattr(comment, 'text', ''),
+                            'author': getattr(comment, 'author', 'Неизвестно'),
+                            'likes': getattr(comment, 'likes', 0)
+                        }
+                        logger.info(f"Комментарий {i+1} (object): автор={comment_data['author']}, текст={comment_data['text'][:50]}...")
+                        comments_for_agent.append(comment_data)
+
+                # Формируем контекст
+                context = f"Анализ комментариев из {source_type}: {source_url}" if source_info else "Анализ текста"
+                logger.info(f"Контекст для суммаризации: {context}")
+
+                # Вызываем агент суммаризации
+                logger.info(f"Вызов analyze_comments с {len(comments_for_agent)} комментариями")
+                summarization_result = analyze_comments(comments_for_agent, context)
+
+                logger.info(f"Результат суммаризации получен")
+                logger.info(f"Тип результата: {type(summarization_result)}")
+                logger.info(f"Ключи в результате: {list(summarization_result.keys()) if isinstance(summarization_result, dict) else 'не словарь'}")
+
+                if isinstance(summarization_result, dict):
+                    if 'error' in summarization_result:
+                        logger.error(f"Ошибка в результате суммаризации: {summarization_result.get('error')}")
+                    else:
+                        logger.info(f"Суммаризация успешна. Общая тональность: {summarization_result.get('overall_sentiment', 'N/A')}")
+                        logger.info(f"Понравилось: {summarization_result.get('liked', {}).get('summary', 'N/A')[:100]}")
+                        logger.info(f"Не понравилось: {summarization_result.get('disliked', {}).get('summary', 'N/A')[:100]}")
+
+                logger.info(f"=== КОНЕЦ СУММАРИЗАЦИИ ===")
+
+            except Exception as e:
+                logger.error(f"КРИТИЧЕСКАЯ ОШИБКА суммаризации: {str(e)}", exc_info=True)
+                summarization_result = None
+
         # Сохраняем анализ в БД только для авторизованных пользователей
         if current_user:
             analysis_data = {
@@ -504,6 +565,14 @@ async def analyze_text(
             if comments_data:
                 analysis_data['comments_statistics'] = comments_data
 
+            # Добавляем результаты суммаризации
+            if summarization_result:
+                logger.info(f"Добавление результатов суммаризации в analysis_data")
+                logger.info(f"Ключи summarization_result: {list(summarization_result.keys()) if isinstance(summarization_result, dict) else 'не словарь'}")
+                analysis_data['summarization'] = summarization_result
+            else:
+                logger.warning(f"summarization_result пустой или None, не добавляем в analysis_data")
+
             db_analysis = TextAnalysis(
                 user_id=current_user.id,
                 original_text=input_text,
@@ -519,6 +588,14 @@ async def analyze_text(
             logger.info("Hierarchical analysis performed for anonymous user, not saved to database")
             analysis_id = None
 
+        # Логируем данные перед отправкой в шаблон
+        logger.info(f"=== ОТПРАВКА ДАННЫХ В ШАБЛОН ===")
+        logger.info(f"summarization_result передается в шаблон: {summarization_result is not None}")
+        if summarization_result:
+            logger.info(f"Ключи summarization_result для шаблона: {list(summarization_result.keys()) if isinstance(summarization_result, dict) else 'не словарь'}")
+            if isinstance(summarization_result, dict) and 'error' not in summarization_result:
+                logger.info(f"overall_sentiment: {summarization_result.get('overall_sentiment', 'отсутствует')}")
+
         return templates.TemplateResponse("results_hierarchical.html", {
             "request": request,
             "user": current_user,
@@ -528,6 +605,7 @@ async def analyze_text(
             "comments_data": comments_data,
             "validation_result": validation_result,
             "analysis_result": analysis_result,
+            "summarization": summarization_result,
             **analysis_result['overall_visualization']
         })
 
@@ -634,7 +712,7 @@ async def analyze_text(
 @app.get("/admin/analyses")
 async def get_all_analyses(
     db: Session = Depends(get_db),
-    admin: User = Depends(get_current_admin_user)
+    admin = Depends(get_current_admin_user)
 ):
     """Получить все анализы (только для администраторов)"""
     analyses = db.query(TextAnalysis).order_by(TextAnalysis.created_at.desc()).all()
@@ -653,7 +731,7 @@ async def health_check():
 async def export_analysis_json(
     analysis_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required)
+    current_user = Depends(get_current_user_required)
 ):
     """Экспорт результатов анализа в JSON"""
     from modules.analysis_results_handler import AnalysisResultsHandler
@@ -706,7 +784,7 @@ async def export_analysis_html(
     analysis_id: int,
     include_details: bool = True,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user_required)
+    current_user = Depends(get_current_user_required)
 ):
     """Экспорт результатов анализа в HTML"""
     from modules.analysis_results_handler import AnalysisResultsHandler

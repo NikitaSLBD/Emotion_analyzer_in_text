@@ -5,11 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Анализатор эмоций{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+    <style>
+    
+    html, body {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+</style>
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="/" class="nav-logo">EmotionAnalyzer</a>
+            <div class="nav-logo-section">
+                <a href="/" class="nav-logo">EmotionAnalyzer</a>
+                <span class="nav-subtitle" style="font-size: 14px; font-weight: normal; display: block; margin-top: -6px;">
+                Справка о системе</span>
+            </div>
             <div class="nav-links">
                 {% if user %}
                 <div class="nav-user">
@@ -20,8 +36,9 @@
                     {% if user.is_admin %}
                     <a href="/docs" class="btn btn-small" target="_blank">API</a>
                     {% endif %}
+                    <a href="/support" class="btn btn-small">🤝Техподдержка</a>
                     <form action="/logout" method="post" style="display: inline;">
-                        <button type="submit" class="logout-btn">Выйти</button>
+                        <button type="submit" class="logout-btn btn-small">Выйти</button>
                     </form>
                 </div>
                 {% else %}
@@ -37,6 +54,7 @@
     <div class="container">
         {% block content %}{% endblock %}
     </div>
+
     <script src="{{ url_for('static', path='js/script.js') }}"></script>
 </body>
 </html>

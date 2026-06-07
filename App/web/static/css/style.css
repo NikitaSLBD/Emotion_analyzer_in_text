@@ -4,6 +4,13 @@
     box-sizing: border-box;
 }
 
+::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    background: transparent;
+}
+
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     max-width: 1200px;
@@ -161,12 +168,13 @@ textarea:focus {
     margin: 5px 0;
 }
 
-.emotion-радость { background-color: #2ecc71; }
-.emotion-грусть { background-color: #3498db; }
-.emotion-любовь { background-color: #e84393; }
-.emotion-злость { background-color: #e74c3c; }
-.emotion-страх { background-color: #95a5a6; }
-.emotion-удивление { background-color: #f1c40f; }
+
+.emotion-радость { background-color: #b8e6c9; }
+.emotion-грусть { background-color: #bbdefb; }
+.emotion-любовь { background-color: #e1bee7; }
+.emotion-злость { background-color: #ffb8b8; }
+.emotion-страх { background-color: #bac3c4; }
+.emotion-удивление { background-color: #fff59d; }
 
 .chart-container {
     text-align: center;
@@ -351,11 +359,24 @@ textarea:focus {
     padding: 0 20px;
 }
 
+.nav-logo-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .nav-logo {
     font-size: 24px;
     font-weight: bold;
     color: #3498db;
     text-decoration: none;
+    margin-bottom: -2px;
+}
+
+.nav-subtitle {
+    font-size: 13px;
+    color: #95a5a6;
+    font-weight: normal;
 }
 
 .nav-links {
@@ -508,4 +529,383 @@ input[type="file"] {
 .btn-small {
     padding: 8px 16px;
     font-size: 14px;
+}
+
+/* Summarization styles */
+.summarization-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.summary-card {
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    border: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+}
+
+.summary-card h3 {
+    margin-top: 0;
+    margin-bottom: 18px;
+    font-size: 19px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Пастельные цвета для разных карточек */
+.sentiment-card {
+    background: linear-gradient(135deg, #e8f4f8 0%, #d4e9f7 100%);
+}
+
+.sentiment-card h3 {
+    color: #2c5f7f;
+}
+
+.liked-card {
+    background: linear-gradient(135deg, #d4f4dd 0%, #b8e6c9 100%);
+}
+
+.liked-card h3 {
+    color: #2d6a4f;
+}
+
+.disliked-card {
+    background: linear-gradient(135deg, #ffd6d6 0%, #ffb8b8 100%);
+}
+
+.disliked-card h3 {
+    color: #8b3a3a;
+}
+
+.themes-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.themes-card h3 {
+    color: #1565c0;
+}
+
+.questions-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+}
+
+.questions-card h3 {
+    color: #1565c0;
+}
+
+.recommendations-card {
+    background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+}
+
+.recommendations-card h3 {
+    color: #7d6608;
+}
+
+.insights-card {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    grid-column: 1 / -1;
+}
+
+.insights-card h3 {
+    color: #6a1b9a;
+}
+
+.sentiment-badge {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 17px;
+    margin: 10px 0;
+    text-transform: capitalize;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.sentiment-позитивное {
+    background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+    color: white;
+}
+
+.sentiment-негативное {
+    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
+    color: white;
+}
+
+.sentiment-нейтральное {
+    background: linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%);
+    color: white;
+}
+
+.sentiment-смешанное {
+    background: linear-gradient(90deg, #81c784 0%, #ffd54f 50%, #e57373 100%);
+    color: white;
+}
+
+.sentiment-distribution {
+    margin-top: 15px;
+}
+
+.sentiment-bar {
+    display: flex;
+    height: 30px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.bar-positive {
+    background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.bar-negative {
+    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.bar-neutral {
+    background: linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.sentiment-legend {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+}
+
+.legend-color.positive {
+    background: linear-gradient(135deg, #81c784 0%, #66bb6a 100%);
+}
+
+.legend-color.negative {
+    background: linear-gradient(135deg, #e57373 0%, #ef5350 100%);
+}
+
+.legend-color.neutral {
+    background: linear-gradient(135deg, #b0bec5 0%, #90a4ae 100%);
+}
+
+.summary-text {
+    line-height: 1.8;
+    color: #424242;
+    margin-bottom: 15px;
+    font-size: 15px;
+}
+
+.key-points {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.key-points li {
+    padding: 10px 0 10px 30px;
+    position: relative;
+    line-height: 1.6;
+    color: #424242;
+    font-size: 15px;
+}
+
+.liked-card .key-points li:before {
+    content: "✓";
+    position: absolute;
+    left: 10px;
+    color: #2d6a4f;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.disliked-card .key-points li:before {
+    content: "✗";
+    position: absolute;
+    left: 10px;
+    color: #8b3a3a;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.themes-card .key-points li:before,
+.questions-card .key-points li:before,
+.recommendations-card .key-points li:before {
+    content: "•";
+    position: absolute;
+    left: 10px;
+    color: inherit;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.notable-comments {
+    display: none; /* Скрываем примеры комментариев */
+}
+
+.themes-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.theme-badge {
+    display: inline-block;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #90caf9 0%, #64b5f6 100%);
+    color: #0d47a1;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease;
+}
+
+.theme-badge:hover {
+    transform: translateY(-2px);
+}
+
+.questions-list,
+.recommendations-list {
+    list-style: none;
+    padding: 0;
+    margin: 15px 0;
+}
+
+.questions-list li,
+.recommendations-list li {
+    padding: 10px 0 10px 30px;
+    position: relative;
+    line-height: 1.6;
+    color: #424242;
+    font-size: 15px;
+}
+
+.questions-list li:before {
+    content: "?";
+    position: absolute;
+    left: 8px;
+    color: #1565c0;
+    font-weight: bold;
+    font-size: 18px;
+    background: #e3f2fd;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.recommendations-list li:before {
+    content: "💡";
+    position: absolute;
+    left: 8px;
+    font-size: 16px;
+}
+
+.insights-text {
+    line-height: 1.8;
+    color: #424242;
+    font-size: 15px;
+    font-style: italic;
+}
+}
+
+.questions-list,
+.recommendations-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.questions-list li,
+.recommendations-list li {
+    padding: 10px 0 10px 30px;
+    position: relative;
+    line-height: 1.6;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.questions-list li:last-child,
+.recommendations-list li:last-child {
+    border-bottom: none;
+}
+
+.questions-list li:before {
+    content: "❓";
+    position: absolute;
+    left: 5px;
+}
+
+.recommendations-list li:before {
+    content: "💡";
+    position: absolute;
+    left: 5px;
+}
+
+.insights-text {
+    line-height: 1.8;
+    color: #555;
+    font-size: 15px;
+}
+
+@media (max-width: 768px) {
+    .summarization-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Support button */
+.support-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+}
+
+@media (max-width: 400px) {
+    .support-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        font-size: 14px;
+    }
 }

@@ -85,6 +85,13 @@ def analyze_comments(comments: List[Dict[str, str]], context: str = "") -> Dict:
     Returns:
         Dict с результатами анализа
     """
+    from App.modules.logger import get_logger
+    logger = get_logger("summarization_agent")
+
+    logger.info(f"[AGENT] Начало analyze_comments")
+    logger.info(f"[AGENT] Получено комментариев: {len(comments)}")
+    logger.info(f"[AGENT] Контекст: {context}")
+
     # Формируем текст для анализа
     comments_text = "\n\n".join([
         f"Комментарий {i+1}:\n"
@@ -93,6 +100,8 @@ def analyze_comments(comments: List[Dict[str, str]], context: str = "") -> Dict:
         f"Лайков: {comment.get('likes', 0)}"
         for i, comment in enumerate(comments)
     ])
+
+    logger.info(f"[AGENT] Длина сформированного текста: {len(comments_text)} символов")
 
     user_message = f"""Контекст: {context}
 
@@ -103,7 +112,12 @@ def analyze_comments(comments: List[Dict[str, str]], context: str = "") -> Dict:
 
 Проанализируй эти комментарии и предоставь структурированную суммаризацию в формате JSON."""
 
+    logger.info(f"[AGENT] Длина user_message: {len(user_message)} символов")
+
     try:
+        logger.info(f"[AGENT] Отправка запроса к LLM модели: {settings.LLM}")
+        logger.info(f"[AGENT] Endpoint: {settings.OMNIROUTE_ENDPOINT}")
+
         response = client.chat.completions.create(
             model=settings.LLM,
             messages=[
@@ -114,24 +128,38 @@ def analyze_comments(comments: List[Dict[str, str]], context: str = "") -> Dict:
             max_tokens=2000
         )
 
+        logger.info(f"[AGENT] Получен ответ от LLM")
         result_text = response.choices[0].message.content
+        logger.info(f"[AGENT] Длина ответа: {len(result_text)} символов")
+        logger.info(f"[AGENT] Первые 200 символов ответа: {result_text[:200]}")
 
         # Пытаемся распарсить JSON
         try:
+            logger.info(f"[AGENT] Попытка парсинга JSON напрямую")
             result = json.loads(result_text)
+            logger.info(f"[AGENT] JSON успешно распарсен")
+            logger.info(f"[AGENT] Ключи результата: {list(result.keys())}")
             return result
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_err:
+            logger.warning(f"[AGENT] Ошибка парсинга JSON: {str(json_err)}")
             # Если модель вернула текст с markdown, пытаемся извлечь JSON
             if "```json" in result_text:
+                logger.info(f"[AGENT] Обнаружен markdown блок, извлекаем JSON")
                 json_start = result_text.find("```json") + 7
                 json_end = result_text.find("```", json_start)
                 result_text = result_text[json_start:json_end].strip()
+                logger.info(f"[AGENT] Извлеченный JSON (первые 200 символов): {result_text[:200]}")
                 result = json.loads(result_text)
+                logger.info(f"[AGENT] JSON из markdown успешно распарсен")
+                logger.info(f"[AGENT] Ключи результата: {list(result.keys())}")
                 return result
             else:
+                logger.error(f"[AGENT] Не найден markdown блок, невозможно извлечь JSON")
+                logger.error(f"[AGENT] Полный ответ модели: {result_text}")
                 raise
 
     except Exception as e:
+        logger.error(f"[AGENT] КРИТИЧЕСКАЯ ОШИБКА: {str(e)}", exc_info=True)
         return {
             "error": str(e),
             "message": "Не удалось проанализировать комментарии"

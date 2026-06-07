@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from modules.logger import get_logger
+from App.modules.logger import get_logger
 from App.infrastructure.config import settings
 
 logger = get_logger("database")
@@ -20,6 +20,9 @@ def get_db():
 
 def init_db():
     try:
+        # Импортируем модели здесь, чтобы они были зарегистрированы в Base.metadata
+        from App.modules import models
+
         Base.metadata.create_all(bind=engine)
         logger.info("БД создана успешно")
     except Exception as e:

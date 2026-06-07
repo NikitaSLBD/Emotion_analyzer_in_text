@@ -9,8 +9,8 @@
 
 {% if analysis_id and user %}
 <div class="export-buttons" style="margin-bottom: 20px;">
-    <a href="/export/json/{{ analysis_id }}" class="btn btn-secondary" download>📥 Скачать JSON</a>
-    <a href="/export/html/{{ analysis_id }}" class="btn btn-secondary" download>🌐 Скачать HTML</a>
+    <a href="/export/json/{{ analysis_id }}" class="btn btn-secondary" download>Скачать JSON</a>
+    <a href="/export/html/{{ analysis_id }}" class="btn btn-secondary" download>Скачать HTML</a>
 </div>
 {% endif %}
 
@@ -30,6 +30,142 @@
     </div>
     {% endif %}
 </div>
+
+<!-- DEBUG: Проверка наличия summarization -->
+<!-- summarization exists: {{ summarization is not none }} -->
+<!-- summarization type: {{ summarization.__class__.__name__ if summarization else 'None' }} -->
+{% if summarization %}
+<!-- summarization keys: {{ summarization.keys() if summarization is mapping else 'not a dict' }} -->
+<!-- has error: {{ summarization.error if summarization.error is defined else 'no error key' }} -->
+{% endif %}
+
+{% if summarization and not summarization.error %}
+<div class="results-section">
+    <h2>Суммаризация комментариев</h2>
+
+    <div class="summarization-container">
+        <!-- Общая тональность -->
+        <div class="summary-card sentiment-card">
+            <h3>📊 Общая тональность</h3>
+            <div class="sentiment-badge sentiment-{{ summarization.overall_sentiment }}">
+                {{ summarization.overall_sentiment }}
+            </div>
+            {% if summarization.sentiment_distribution %}
+            <div class="sentiment-distribution">
+                <div class="sentiment-bar">
+                    <div class="bar-positive" style="width: {{ summarization.sentiment_distribution.positive_percent }}%">
+                        {{ summarization.sentiment_distribution.positive_percent }}%
+                    </div>
+                    <div class="bar-negative" style="width: {{ summarization.sentiment_distribution.negative_percent }}%">
+                        {{ summarization.sentiment_distribution.negative_percent }}%
+                    </div>
+                    <div class="bar-neutral" style="width: {{ summarization.sentiment_distribution.neutral_percent }}%">
+                        {{ summarization.sentiment_distribution.neutral_percent }}%
+                    </div>
+                </div>
+                <div class="sentiment-legend">
+                    <span class="legend-item"><span class="legend-color positive"></span> Позитивные</span>
+                    <span class="legend-item"><span class="legend-color negative"></span> Негативные</span>
+                    <span class="legend-item"><span class="legend-color neutral"></span> Нейтральные</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Что понравилось -->
+        {% if summarization.liked %}
+        <div class="summary-card liked-card" style="background: linear-gradient(135deg, #d4f4dd 0%, #b8e6c9 100%);">
+            <h3 style="color: #2d6a4f;">Что понравилось пользователям:</h3>
+            <p class="summary-text">{{ summarization.liked.summary }}</p>
+            {% if summarization.liked.key_points %}
+            <ul class="key-points">
+                {% for point in summarization.liked.key_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Что не понравилось -->
+        {% if summarization.disliked %}
+        <div class="summary-card disliked-card" style="background: linear-gradient(135deg, #ffd6d6 0%, #ffb8b8 100%);">
+            <h3 style="color: #8b3a3a;">Что не понравилось пользователям:</h3>
+            <p class="summary-text">{{ summarization.disliked.summary }}</p>
+            {% if summarization.disliked.key_points %}
+            <ul class="key-points">
+                {% for point in summarization.disliked.key_points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Ключевые темы -->
+        {% if summarization.key_themes %}
+        <div class="summary-card themes-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+            <h3 style="color: #1565c0;">Ключевые темы:</h3>
+            <div class="themes-list">
+                {% for theme in summarization.key_themes %}
+                <span class="theme-badge">{{ theme }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Частые вопросы -->
+        {% if summarization.common_questions %}
+        <div class="summary-card questions-card" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);">
+            <h3 style="color: #1565c0;">? Частые вопросы:</h3>
+            <ul class="questions-list">
+                {% for question in summarization.common_questions %}
+                <li>{{ question }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Рекомендации -->
+        {% if summarization.recommendations %}
+        <div class="summary-card recommendations-card", style="background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);">
+            <h3 style="color: #7d6608;">Рекомендации:</h3>
+            <ul class="recommendations-list">
+                {% for recommendation in summarization.recommendations %}
+                <li>{{ recommendation }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Дополнительные инсайты -->
+        {% if summarization.insights %}
+        <div class="summary-card insights-card" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); grid-column: 1 / -1;">
+            <h3 style="color: #6a1b9a;">Дополнительные наблюдения:</h3>
+            <p class="insights-text">{{ summarization.insights }}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% elif summarization and summarization.error %}
+<div class="results-section">
+    <h2>AI Суммаризация комментариев</h2>
+    <div style="background: #ffebee; padding: 15px; border-radius: 5px; color: #c62828;">
+        <strong>⚠️ Ошибка суммаризации:</strong> {{ summarization.error }}
+        {% if summarization.message %}
+        <br>{{ summarization.message }}
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<div class="results-section">
+    <h2>AI Суммаризация комментариев</h2>
+    <div style="background: #fff3e0; padding: 15px; border-radius: 5px; color: #e65100;">
+        <strong>ℹ️ Суммаризация недоступна</strong>
+        <p>Данные суммаризации отсутствуют или не были сгенерированы.</p>
+    </div>
+</div>
+{% endif %}
 
 <div class="results-section">
     <h2>Общая статистика по всем комментариям</h2>

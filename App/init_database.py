@@ -18,11 +18,12 @@ def main():
         logger.info("Starting database initialization...")
         init_db()
         logger.info("Database initialization completed successfully!")
-        
-        from modules.user import Base
+
+        from modules.models import User, TextAnalysis
+        from modules.database import Base
         tables = Base.metadata.tables.keys()
         logger.info(f"Created tables: {list(tables)}")
-        
+
     except Exception as e:
         logger.error(f"Database initialization failed: {str(e)}")
         sys.exit(1)

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from typing import Dict, List
-from modules.logger import get_logger, log_function_call
+from App.modules.logger import get_logger, log_function_call
 
 
 class EmotionVisualizer:
@@ -14,12 +14,12 @@ class EmotionVisualizer:
         self.logger = get_logger("visualization")
 
         self.emotion_colors = {
-            "грусть": "#3498db",
-            "радость": "#2ecc71",
-            "любовь": "#cb4184",
-            "злость": "#eb2222",
-            "страх": "#95a5a6",
-            "удивление": "#f1c40f"
+            "грусть": "#bbdefb",
+            "радость": "#b8e6c9",
+            "любовь": "#e1bee7",
+            "злость": "#ffb8b8",
+            "страх": "#bac3c4",
+            "удивление": "#fff59d"
         }
 
     @log_function_call("visualization")
@@ -44,7 +44,7 @@ class EmotionVisualizer:
                                              autopct='%1.1f%%', startangle=90)
 
             for autotext in autotexts:
-                autotext.set_color('white')
+                autotext.set_color('black')
                 autotext.set_fontweight('bold')
 
             ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
@@ -149,77 +149,3 @@ class EmotionVisualizer:
             "emotion_counts": emotion_counts,
             "total_sentences": len(sentence_results)
         }
-
-    def get_chart_as_bytes(self, probabilities: Dict[str, float], title: str) -> bytes:
-        """Создание диаграммы и возврат в виде байтов (для PDF)
-
-        Args:
-            probabilities: Словарь с вероятностями эмоций
-            title: Заголовок диаграммы
-
-        Returns:
-            PNG изображение в виде байтов
-        """
-        try:
-            fig, ax = plt.subplots(figsize=(8, 6))
-
-            emotions = list(probabilities.keys())
-            probs = list(probabilities.values())
-            colors = [self.emotion_colors.get(emotion, '#cccccc') for emotion in emotions]
-
-            wedges, texts, autotexts = ax.pie(probs, labels=emotions, colors=colors,
-                                             autopct='%1.1f%%', startangle=90)
-
-            for autotext in autotexts:
-                autotext.set_color('white')
-                autotext.set_fontweight('bold')
-
-            ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
-
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', bbox_inches='tight', dpi=150)
-            buffer.seek(0)
-            image_bytes = buffer.getvalue()
-            plt.close()
-
-            return image_bytes
-
-        except Exception as e:
-            self.logger.error(f"Ошибка создания диаграммы в байтах: {str(e)}")
-            return b""
-
-    def get_frequency_chart_as_bytes(self, emotion_counts: Dict[str, int]) -> bytes:
-        """Создание диаграммы частоты и возврат в виде байтов (для PDF)
-
-        Args:
-            emotion_counts: Словарь с количеством каждой эмоции
-
-        Returns:
-            PNG изображение в виде байтов
-        """
-        try:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            emotions = list(emotion_counts.keys())
-            counts = list(emotion_counts.values())
-            colors = [self.emotion_colors.get(emotion, '#cccccc') for emotion in emotions]
-
-            bars = ax.bar(emotions, counts, color=colors)
-            ax.set_title('Частота эмоций в тексте', fontsize=14, fontweight='bold')
-            ax.set_ylabel('Количество предложений')
-
-            for bar, count in zip(bars, counts):
-                height = bar.get_height()
-                ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                        f'{count}', ha='center', va='bottom', fontweight='bold')
-
-            buffer = io.BytesIO()
-            plt.savefig(buffer, format='png', bbox_inches='tight', dpi=150)
-            buffer.seek(0)
-            image_bytes = buffer.getvalue()
-            plt.close()
-
-            return image_bytes
-
-        except Exception as e:
-            self.logger.error(f"Ошибка создания диаграммы частоты в байтах: {str(e)}")
-            return b""

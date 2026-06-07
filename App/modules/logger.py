@@ -3,8 +3,8 @@
 Импортирует все из подмодулей logging.
 """
 
-from modules.logging.base_logger import EmotionAnalyzerLogger
-from modules.logging.utils import (
+from App.modules.logging.base_logger import EmotionAnalyzerLogger
+from App.modules.logging.utils import (
     get_logger,
     log_function_call,
     log_model_operation,
